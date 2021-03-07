@@ -101,23 +101,68 @@ class Ball(PhysicsObject):
                 continue
             if (self.pose - ball.pose).magnitude() < self.radius + ball.radius:
                 #It Hit
-                print( (self.pose - ball.pose).magnitude() )
+                #print( (self.pose - ball.pose).magnitude() )
 
                 self._did_collide = True;
                 #self.collide_with_other_ball(ball) Don't need this, do both in one
-                ball.collide_with_other_ball(self)
+                ball.collide_with_other_ball_2(self)
                 break
         # TODO iterate through other balls and call self.collide_with_other_ball if colliding
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
         pass
 
-    def collide_with_other_ball(self, other):
+    def collide_with_other_ball_2(self, other):
         self.small_spark_explosion((self.pose.x, self.pose.y))
         self.game.current_scene.shake(10, other.pose - self.pose)
 
         # Offset balls
+        print(self.color)
         collision_normal = self.pose - other.pose
         offset_required = (collision_normal.magnitude() - (self.radius + other.radius) ) / 1.95
+        collision_normal.scale_to(1)
+        self.pose -= collision_normal * offset_required
+        other.pose += collision_normal * offset_required
+
+        relative_velocity = self.velocity + other.velocity;
+
+        other_relative_vector = collision_normal
+        momemtum = relative_velocity * self.mass
+
+        dot_product_vectors = collision_normal.x * relative_velocity.x + collision_normal.y * relative_velocity.y;
+
+        energyRatio = math.sqrt(1 - (dot_product_vectors/ (collision_normal.magnitude() * relative_velocity.magnitude()) ) )
+
+        if energyRatio<0.1:
+            energyRatio = 0.1
+        if energyRatio>.98:
+            energyRatio = .98
+
+        print(energyRatio)
+
+        #self_relative_momentum = energyRatio*momemtum
+        other_relative_momentum = collision_normal*(momemtum.magnitude() - energyRatio*momemtum.magnitude())
+        other_relative_velocity = other_relative_momentum * (1/other.mass)
+
+        self_relative_momentum = momemtum - other_relative_momentum
+        self_relative_velocity = self_relative_momentum * (1/self.mass)
+
+        self.velocity = self_relative_velocity - other.velocity;
+        #other.velocity = other_relative_velocity
+
+
+
+
+#in a direction
+#relative output veloctity ball 2  = (original velocity x 2
+
+
+        pass
+
+
+    def collide_with_other_ball(self, other):
+        # Offset balls
+        collision_normal = self.pose - other.pose
+        offset_required = (collision_normal.magnitude() - (self.radius + other.radius) ) / 1.9
         collision_normal.scale_to(1)
 
         self_output_velocity = (self.velocity * ((self.mass - other.mass)/(self.mass + other.mass)) ) + ( other.velocity * ((2 * other.mass)/(self.mass + other.mass)) )
@@ -125,7 +170,20 @@ class Ball(PhysicsObject):
         #TOTAL ELASTIC
         #Distribute a % of inertia
 
-        elastic_factor = .9
+        elastic_factor = 1
+
+
+        self_velocity_vector = self.velocity.copy()
+        self_velocity_vector.scale_to(1)
+
+        other_velocity_vector = other.velocity.copy()
+        other_velocity_vector.scale_to(1)
+
+        dot_product_self = collision_normal.x * self.velocity.x + collision_normal.y * self_velocity_vector.y;
+        self_output_velocity_vector = self_velocity_vector - collision_normal * 2 * dot_product_self
+
+        dot_product_other = collision_normal.x * other.velocity.x + collision_normal.y * other_velocity_vector.y;
+        other_output_velocity_vector = other_velocity_vector + collision_normal * 2 * dot_product_self
 
         self.velocity = (self_output_velocity * (1/self.mass) * elastic_factor + other_output_velocity * (1/other.mass) * (1-elastic_factor) ) * self.mass
         other.velocity = (other_output_velocity * (1/other.mass) * elastic_factor + self_output_velocity * (1/self.mass)  * (1-elastic_factor) ) * other.mass
@@ -158,7 +216,6 @@ class Ball(PhysicsObject):
         dot_product_other = collision_normal.x * other.velocity.x + collision_normal.y * other_velocity_vector.y;
         other_output_velocity_vector = other_velocity_vector + collision_normal * 2 * dot_product_self
 
-        print(self.velocity.magnitude())
         # INERTIA CALCULATIONS
         self_inertia = self.velocity * self.mass
         other_inertia = other.velocity * other.mass
