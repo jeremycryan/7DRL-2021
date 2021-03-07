@@ -14,6 +14,8 @@ class LevelScene(Scene):
 
     def update(self, dt, events):
         for ball in self.balls:
+            ball._did_collide = False;
+        for ball in self.balls:
             ball.update(dt, events)
         pass
 
