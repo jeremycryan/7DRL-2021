@@ -4,4 +4,4 @@ WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
 WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT
 
-GAME_TITLE = "Super cool pool game!!!!1!1!"
+GAME_TITLE = "Super pool cool game!!!!1!1!"
