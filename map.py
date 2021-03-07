@@ -35,6 +35,25 @@ class Map(GameObject):
         for room in self.room_iter():
             room.draw(surface, offset=offset)
 
+    def tiles_near(self, pose, radius):
+        radius *= 1.25
+        min_x = int((pose.x - radius)/c.TILE_SIZE)
+        min_y = int((pose.y - radius)/c.TILE_SIZE)
+        max_x = int((pose.x + radius)/c.TILE_SIZE)
+        max_y = int((pose.y + radius)/c.TILE_SIZE)
+
+        for room in self.room_iter():
+            px = room.x * c.ROOM_WIDTH_TILES * c.TILE_SIZE
+            py = room.y * c.ROOM_WIDTH_TILES * c.TILE_SIZE
+            if px < min_x * c.TILE_SIZE - c.ROOM_WIDTH_TILES * c.TILE_SIZE or px > max_x * c.TILE_SIZE:
+                continue
+            if py < min_y * c.TILE_SIZE - c.ROOM_WIDTH_TILES * c.TILE_SIZE or py > max_y * c.TILE_SIZE:
+                continue
+            for tile in room.tile_iter():
+                if tile.x < min_x or tile.y < min_y or tile.x > max_x or tile.y > max_y:
+                    continue
+                yield tile
+
 
 class Room(GameObject):
     def __init__(self, game, x, y):
@@ -58,6 +77,12 @@ class Room(GameObject):
             tile.update(dt, events)
 
     def draw(self, surface, offset=(0, 0)):
+        camera = self.game.current_scene.camera
+        if offset[0] + self.x*c.ROOM_WIDTH_TILES*c.TILE_SIZE < -c.WINDOW_WIDTH - c.TILE_SIZE or \
+            offset[1] + self.y*c.ROOM_HEIGHT_TILES*c.TILE_SIZE < -c.WINDOW_HEIGHT - c.TILE_SIZE or \
+            offset[0] + self.x*c.ROOM_WIDTH_TILES*c.TILE_SIZE > c.WINDOW_WIDTH or \
+            offset[1] + self.y*c.ROOM_HEIGHT_TILES*c.TILE_SIZE > c.WINDOW_HEIGHT:
+            return
         for tile in self.tile_iter():
             tile.draw(surface, offset=offset)
 
@@ -68,7 +93,9 @@ class Room(GameObject):
 
 
 class Tile(GameObject):
-    def __init__(self, key, x, y):
+    def __init__(self, game, key, x, y):
+        self.game = game
+
         self.key = key
         self.collidable = True
         self.surface = pygame.Surface((c.TILE_SIZE, c.TILE_SIZE))
@@ -85,5 +112,8 @@ class Tile(GameObject):
         pass
 
     def draw(self, surface, offset=(0, 0)):
-        # TODO only draw things close enough to the camera to be relevant
-        pass
+        x = self.x * c.TILE_SIZE + offset[0]
+        y = self.y * c.TILE_SIZE + offset[1]
+        if x < -c.TILE_SIZE or x > c.WINDOW_WIDTH or y < -c.TILE_SIZE or y > c.WINDOW_HEIGHT:
+            return
+        surface.blit(self.surface, (x, y))

@@ -180,6 +180,9 @@ class Ball(PhysicsObject):
 
     def draw(self, screen, offset=(0, 0)):
 
+        for tile in self.game.current_scene.map.tiles_near(self.pose, self.radius):
+            pygame.draw.rect(screen, self.color, (tile.x * c.TILE_SIZE + offset[0], tile.y * c.TILE_SIZE + offset[1], c.TILE_SIZE, c.TILE_SIZE), 1)
+
         x, y = self.pose.get_position()
         x += offset[0]
         y += offset[1]
