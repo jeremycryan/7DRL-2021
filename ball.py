@@ -8,7 +8,7 @@ import constants as c
 class Ball(PhysicsObject):
     def __init__(self, game, x=0, y=0, radius=c.DEFAULT_BALL_RADIUS, drag_multiplicative= c.DEFAULT_BALL_MULT_DRAG, drag_constant = c.DEFAULT_BALL_CONSTANT_DRAG):
         self.radius = radius
-        self.weight = 1
+        self.mass = 1
         self.color = (255, 0, 0)  # This won't matter once we change drawing code
         self.load_back_surface()
         self.process_back_surface()
@@ -115,33 +115,57 @@ class Ball(PhysicsObject):
         offset_required = (collision_normal.magnitude() - (self.radius + other.radius) ) / 1.95
         collision_normal.scale_to(1)
 
+        self_output_velocity = (self.velocity * ((self.mass - other.mass)/(self.mass + other.mass)) ) + ( other.velocity * ((2 * other.mass)/(self.mass + other.mass)) )
+        other_output_velocity = (self.velocity * ((2 * self.mass)/(self.mass + other.mass)) ) + (other.velocity * ((other.mass - self.mass)/(other.mass + self.mass)) )
+        #TOTAL ELASTIC
+        #Distribute a % of inertia
+
+        elastic_factor = .9
+
+        self.velocity = (self_output_velocity * (1/self.mass) * elastic_factor + other_output_velocity * (1/other.mass) * (1-elastic_factor) ) * self.mass
+        other.velocity = (other_output_velocity * (1/other.mass) * elastic_factor + self_output_velocity * (1/self.mass)  * (1-elastic_factor) ) * other.mass
+
+        pass
+
+    def collide_with_tile(self, tile):
+        # TODO
+
+        # Offset balls
+        collision_normal = self.pose - other.pose
+        offset_required = (collision_normal.magnitude() - (self.radius + other.radius)) / 1.95
+        collision_normal.scale_to(1)
+
         self.pose -= collision_normal * offset_required
         other.pose += collision_normal * offset_required
 
-        #Change velocities
+        # Change velocities
         self_velocity_vector = self.velocity.copy()
         self_velocity_vector.scale_to(1)
 
         other_velocity_vector = other.velocity.copy()
         other_velocity_vector.scale_to(1)
 
-        collision_normal *= -1;
+        collision_normal *= 1;
 
-        dot_product_self = collision_normal.x * self.velocity.x + collision_normal.y *self_velocity_vector.y;
+        dot_product_self = collision_normal.x * self.velocity.x + collision_normal.y * self_velocity_vector.y;
         self_output_velocity_vector = self_velocity_vector - collision_normal * 2 * dot_product_self
 
         dot_product_other = collision_normal.x * other.velocity.x + collision_normal.y * other_velocity_vector.y;
-        other_output_velocity_vector = other_velocity_vector - collision_normal * 2 * dot_product_self
+        other_output_velocity_vector = other_velocity_vector + collision_normal * 2 * dot_product_self
 
         print(self.velocity.magnitude())
+        # INERTIA CALCULATIONS
+        self_inertia = self.velocity * self.mass
+        other_inertia = other.velocity * other.mass
+        inertia_total = self_inertia + other_inertia
+
+        inertia_unit_vector = inertia_total.copy()
+        inertia_unit_vector = inertia_unit_vector.scaleto()
+        inertia_ratio = self_inertia / other_inertia
+
         self.velocity = self_output_velocity_vector * self.velocity.magnitude()
+        other.velocity = other_output_velocity_vector * other.velocity.magnitude()
 
-        # Don't forget to somehow flag this collision so it doesn't happen again this frame when other is updated
-
-        pass
-
-    def collide_with_tile(self, tile):
-        # TODO
         pass
 
     def knock(self, cue, angle, power):
