@@ -44,7 +44,7 @@ class Map(GameObject):
 
         for room in self.room_iter():
             px = room.x * c.ROOM_WIDTH_TILES * c.TILE_SIZE
-            py = room.y * c.ROOM_WIDTH_TILES * c.TILE_SIZE
+            py = room.y * c.ROOM_HEIGHT_TILES * c.TILE_SIZE
             if px < min_x * c.TILE_SIZE - c.ROOM_WIDTH_TILES * c.TILE_SIZE or px > max_x * c.TILE_SIZE:
                 continue
             if py < min_y * c.TILE_SIZE - c.ROOM_WIDTH_TILES * c.TILE_SIZE or py > max_y * c.TILE_SIZE:
