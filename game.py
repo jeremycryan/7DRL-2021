@@ -10,7 +10,11 @@ class Game:
     def __init__(self):
         pygame.init()
 
-        self.screen = pygame.display.set_mode(c.WINDOW_SIZE)
+        if not c.FULLSCREEN:
+            self.screen = pygame.display.set_mode(c.WINDOW_SIZE)
+        else:
+            self.screen = pygame.display.set_mode(c.WINDOW_SIZE, pygame.FULLSCREEN)
+
         pygame.display.set_caption(c.GAME_TITLE)
         self.clock = pygame.time.Clock()
 

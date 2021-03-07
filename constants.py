@@ -19,5 +19,15 @@ CYAN = 0, 255, 255
 MAGENTA = 255, 0, 255
 YELLOW = 255, 255, 0
 
+TILE_SIZE = 64
+
+ROOM_WIDTH_TILES = 20
+ROOM_HEIGHT_TILES = 12
+
+EMPTY = "."
+WALL = "X"
+
+FULLSCREEN = False
+
 def image_path(rel):
     return os.path.join("images", rel)
