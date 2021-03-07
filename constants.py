@@ -1,7 +1,23 @@
+import os
+
 FPS = 60
 
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 1280
+WINDOW_HEIGHT = 720
 WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT
 
 GAME_TITLE = "Super pool cool game!!!!1!1!"
+
+DEFAULT_BALL_RADIUS = 30
+
+BLACK = 0, 0, 0
+WHITE = 255, 255, 255
+RED = 255, 0, 0
+GREEN = 0, 255, 0
+BLUE = 0, 0, 255
+CYAN = 0, 255, 255
+MAGENTA = 255, 0, 255
+YELLOW = 255, 255, 0
+
+def image_path(rel):
+    return os.path.join("images", rel)

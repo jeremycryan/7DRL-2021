@@ -5,13 +5,17 @@ import pygame
 from ball import Ball
 from primitives import Pose
 from cue import Cue, BasicCue
+import constants as c
 
 
 class Player(Ball):
-    def __init__(self, x=0, y=0):
-        super().__init__(x, y, 20)
+    def __init__(self, game, x=0, y=0):
+        super().__init__(game, x, y)
         self.color = (255, 255, 0)
         self.active_cue = BasicCue()
+
+    def load_back_surface(self):
+        self.back_surface = pygame.image.load(c.image_path("player_back.png"))
 
     def update(self, dt, events):
         for event in events:
