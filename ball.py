@@ -1,11 +1,12 @@
 import pygame
+import math
 
 from primitives import PhysicsObject, Pose
 import constants as c
 
 
 class Ball(PhysicsObject):
-    def __init__(self, game, x=0, y=0, radius=c.DEFAULT_BALL_RADIUS):
+    def __init__(self, game, x=0, y=0, radius=c.DEFAULT_BALL_RADIUS, drag_multiplicative= c.DEFAULT_BALL_MULT_DRAG, drag_constant = c.DEFAULT_BALL_CONSTANT_DRAG):
         self.radius = radius
         self.weight = 1
         self.color = (255, 0, 0)  # This won't matter once we change drawing code
@@ -18,6 +19,9 @@ class Ball(PhysicsObject):
         self.surf = pygame.Surface((self.radius*2, self.radius*2))
         self.surf.set_colorkey(c.MAGENTA)
         self.initial_position = Pose((x, y), 0)
+        self.drag_multiplicative = drag_multiplicative
+        self.drag_constant = drag_constant
+        self._did_collide = False
 
     def process_back_surface(self):
         self.back_surface = pygame.transform.scale(self.back_surface, (self.radius*4, self.radius*4))
@@ -60,16 +64,80 @@ class Ball(PhysicsObject):
     def update(self, dt, events):
         super().update(dt, events)  # update position based on velocity, velocity based on acceleration
 
+        self.drag(dt)
+
         self.update_collisions()
 
+    def drag(self, dt):
+
+        self.velocity -= self.velocity * self.drag_multiplicative * dt;
+        _temp_velocity = self.velocity.copy();
+        _temp_velocity.scale_to(1);
+        if(self.velocity.x > 0):
+            posX = True
+        else:
+            posX = False
+        if (self.velocity.y > 0):
+            posY = True
+        else:
+            posY = False
+        self.velocity -= _temp_velocity * self.drag_constant * dt;
+
+
+        if ( (self.velocity.x > 0 and not posX) or (self.velocity.y > 0 and not posY) ):
+            self.velocity *= 0;
+
     def update_collisions(self):
+
+        balls = self.game.current_scene.balls;
+
+        #check for collisions
+        for ball in balls:
+            if ball is self:
+                continue
+            if ball._did_collide:
+                continue
+            if (self.pose - ball.pose).magnitude() < self.radius + ball.radius:
+                #It Hit
+                print( (self.pose - ball.pose).magnitude() )
+
+                self._did_collide = True;
+                #self.collide_with_other_ball(ball) Don't need this, do both in one
+                ball.collide_with_other_ball(self)
+                break
         # TODO iterate through other balls and call self.collide_with_other_ball if colliding
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
         pass
 
     def collide_with_other_ball(self, other):
-        # TODO implement this
+        # Offset balls
+        collision_normal = self.pose - other.pose
+        offset_required = (collision_normal.magnitude() - (self.radius + other.radius) ) / 1.95
+        collision_normal.scale_to(1)
+
+        self.pose -= collision_normal * offset_required
+        other.pose += collision_normal * offset_required
+
+        #Change velocities
+        self_velocity_vector = self.velocity.copy()
+        self_velocity_vector.scale_to(1)
+
+        other_velocity_vector = other.velocity.copy()
+        other_velocity_vector.scale_to(1)
+
+        collision_normal *= -1;
+
+        dot_product_self = collision_normal.x * self.velocity.x + collision_normal.y *self_velocity_vector.y;
+        self_output_velocity_vector = self_velocity_vector - collision_normal * 2 * dot_product_self
+
+        dot_product_other = collision_normal.x * other.velocity.x + collision_normal.y * other_velocity_vector.y;
+        other_output_velocity_vector = other_velocity_vector - collision_normal * 2 * dot_product_self
+
+        print(self.velocity.magnitude())
+        self.velocity = self_output_velocity_vector * self.velocity.magnitude()
+
         # Don't forget to somehow flag this collision so it doesn't happen again this frame when other is updated
+
         pass
 
     def collide_with_tile(self, tile):
