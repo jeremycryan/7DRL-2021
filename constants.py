@@ -32,5 +32,11 @@ WALL = "X"
 
 FULLSCREEN = False
 
+DEBUG = True
+
+def dprint(thing):
+    if DEBUG:
+        print(thing)
+
 def image_path(rel):
     return os.path.join("images", rel)
