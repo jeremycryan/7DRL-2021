@@ -35,6 +35,25 @@ class Map(GameObject):
         for room in self.room_iter():
             room.draw(surface, offset=offset)
 
+    def tiles_near(self, pose, radius):
+        radius *= 1.25
+        min_x = int((pose.x - radius)/c.TILE_SIZE)
+        min_y = int((pose.y - radius)/c.TILE_SIZE)
+        max_x = int((pose.x + radius)/c.TILE_SIZE)
+        max_y = int((pose.y + radius)/c.TILE_SIZE)
+
+        for room in self.room_iter():
+            px = room.x * c.ROOM_WIDTH_TILES * c.TILE_SIZE
+            py = room.y * c.ROOM_WIDTH_TILES * c.TILE_SIZE
+            if px < min_x * c.TILE_SIZE - c.ROOM_WIDTH_TILES * c.TILE_SIZE or px > max_x * c.TILE_SIZE:
+                continue
+            if py < min_y * c.TILE_SIZE - c.ROOM_WIDTH_TILES * c.TILE_SIZE or py > max_y * c.TILE_SIZE:
+                continue
+            for tile in room.tile_iter():
+                if tile.x < min_x or tile.y < min_y or tile.x > max_x or tile.y > max_y:
+                    continue
+                yield tile
+
 
 class Room(GameObject):
     def __init__(self, game, x, y):
