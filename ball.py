@@ -4,6 +4,8 @@ import math
 from primitives import PhysicsObject, Pose
 import constants as c
 from particle import Spark
+import random
+import time
 
 
 class Ball(PhysicsObject):
@@ -11,9 +13,9 @@ class Ball(PhysicsObject):
         self.radius = radius
         self.mass = 1
         self.color = (255, 0, 0)  # This won't matter once we change drawing code
+        super().__init__(game, (x, y), 0)
         self.load_back_surface()
         self.process_back_surface()
-        super().__init__(game, (x, y), 0)
         self.generate_overlay()
         self.generate_shading()
         self.generate_shadow()
@@ -27,8 +29,8 @@ class Ball(PhysicsObject):
         self.outline_hidden = False
 
     def process_back_surface(self):
-        self.back_surface = pygame.transform.scale(self.back_surface, (self.radius*4, self.radius*4))
-        noise = pygame.image.load(c.image_path("noise.png"))
+        self.back_surface = pygame.transform.scale(self.back_surface, (self.radius*4, self.radius*4)).convert()
+        noise = pygame.image.load(c.image_path("noise.png")).convert()
         x_times = int(self.back_surface.get_width() / noise.get_width()) + 1
         y_times = int(self.back_surface.get_height() / noise.get_height()) + 1
         for x in range(x_times):
@@ -63,6 +65,7 @@ class Ball(PhysicsObject):
         # Load scrolly image
         self.back_surface = pygame.Surface((self.radius*2, self.radius*2))
         self.back_surface.fill((50, 80, 255))
+        self.back_surface = pygame.image.load(c.image_path(f"{random.choice([1, 2, 3, 4, 5, 6, 7, 8])}_ball.png"))
 
     def update(self, dt, events):
         super().update(dt, events)  # update position based on velocity, velocity based on acceleration
