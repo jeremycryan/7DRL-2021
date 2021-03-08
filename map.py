@@ -103,7 +103,7 @@ class Room(GameObject):
 
 
 class Tile(GameObject):
-    def __init__(self, game, key, x, y, top_right_corner = False, top_left_corner = False, bottom_right_corner = False, bottom_left_corner = False, down_bumper = False, up_bumper = False, left_bumper = False, right_bumper = False):
+    def __init__(self, game, key, x, y, top_right_corner = False, top_left_corner = False, bottom_right_corner = False, bottom_left_corner = False, down_bumper = False, up_bumper = False, left_bumper = False, right_bumper = False, bounce_factor = .9):
         self.game = game
 
         self.key = key
@@ -117,6 +117,7 @@ class Tile(GameObject):
         self.up_bumper = up_bumper
         self.left_bumper = left_bumper
         self.right_bumper = right_bumper
+        self.bounce_factor = bounce_factor
         if key in [c.EMPTY]:
             self.collidable = False
             self.surface.fill((30, 80, 30))

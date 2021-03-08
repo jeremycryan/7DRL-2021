@@ -117,12 +117,16 @@ class Ball(PhysicsObject):
                 break
 
         for mapTile in mapTiles:
-            if self._did_collide:
-                return
-            if mapTile.collidable and (abs(self.map_coordinate_to_pose(mapTile).x - self.pose.x) < c.TILE_SIZE or abs(self.map_coordinate_to_pose(mapTile).y - self.pose.y) < c.TILE_SIZE):
+            relative_pose = (self.map_coordinate_to_pose(mapTile) - self.pose)
+            #if self._did_collide: Probably don't need or want this here
+            #   return
+            if (abs(relative_pose.x) > c.TILE_SIZE/2 + self.radius*.5 and abs(relative_pose.x) < c.TILE_SIZE/2 + self.radius*1.5 and \
+                abs(relative_pose.y) > c.TILE_SIZE/2 + self.radius*.5 and abs(relative_pose.y) < c.TILE_SIZE/2 + self.radius*1.5 and mapTile.collidable):
+                self.do_corner_collision(mapTile)
+                continue
+            if mapTile.collidable and (abs(relative_pose.x) < c.TILE_SIZE/2 + self.radius and abs(relative_pose.y) < c.TILE_SIZE/2 + self.radius):
                 self.do_collision(mapTile)
-            #if((self.map_coordinate_to_pose(mapTile) - self.pose).magnitude() < self.radius):
-            #    self.do_collision(mapTile)
+
 
 
 
@@ -132,15 +136,28 @@ class Ball(PhysicsObject):
         pass
     def do_collision(self, mapTile):
         print("wall");
-        return(True)
+
+        if(mapTile.down_bumper):
+            self.velocity.y = abs(self.velocity.y) * -1
+        if (mapTile.up_bumper):
+            self.velocity.y = abs(self.velocity.y)
+        if (mapTile.left_bumper):
+            self.velocity.x = abs(self.velocity.x) * -1
+        if (mapTile.right_bumper):
+            self.velocity.x = abs(self.velocity.x)
+
 
     def do_corner_collision(self, mapTile):
+        if not (mapTile.top_right_corner or mapTile.top_left_corner or mapTile.bottom_right_corner or mapTile.bottom_left_corner):
+            self.do_collision(mapTile)
+            return()
+
         print("wall_corner");
-        #pass to do collision if not corner
-        return (True)
+
+        return ()
 
     def map_coordinate_to_pose(self, mapTile):
-        return(Pose((mapTile.x * c.TILE_SIZE, mapTile.y * c.TILE_SIZE),0)) #offset by tilezise /2 to get center
+        return(Pose(((mapTile.x * c.TILE_SIZE) + c.TILE_SIZE/2, mapTile.y * c.TILE_SIZE + c.TILE_SIZE/2 ) ,0)) #offset by tilezise /2 to get center
 
     def collide_with_other_ball_2(self, other):
 
