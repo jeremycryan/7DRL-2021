@@ -102,8 +102,8 @@ class Ball(PhysicsObject):
                 #print( (self.pose - ball.pose).magnitude() )
 
                 self._did_collide = True;
-                #self.collide_with_other_ball(ball) Don't need this, do both in one
-                ball.collide_with_other_ball_2(self)
+                self.collide_with_other_ball_2(ball)
+                #ball.collide_with_other_ball_2(self)
                 break
         # TODO iterate through other balls and call self.collide_with_other_ball if colliding
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
@@ -118,31 +118,39 @@ class Ball(PhysicsObject):
         self.pose -= collision_normal * offset_required
         other.pose += collision_normal * offset_required
 
-        relative_velocity = self.velocity + other.velocity;
+        relative_velocity = self.velocity - other.velocity;
+        if(relative_velocity.magnitude() == 0):
+            return
+
 
         other_relative_vector = collision_normal
         momemtum = relative_velocity * self.mass
 
         dot_product_vectors = collision_normal.x * relative_velocity.x + collision_normal.y * relative_velocity.y;
 
-        energyRatio = math.sqrt(1 - (dot_product_vectors/ (collision_normal.magnitude() * relative_velocity.magnitude()) ) )
+        energyRatio = math.sin( math.acos (dot_product_vectors/ (collision_normal.magnitude() * relative_velocity.magnitude()) ) )
+
+        print(energyRatio)
 
         if energyRatio<0.1:
             energyRatio = 0.1
         if energyRatio>.98:
             energyRatio = .98
 
-        print(energyRatio)
 
         #self_relative_momentum = energyRatio*momemtum
-        other_relative_momentum = collision_normal*(momemtum.magnitude() - energyRatio*momemtum.magnitude())
+        other_relative_momentum = collision_normal*momemtum.magnitude() * ( (energyRatio-1) * -1)
+        #other_relative_momentum = collision_normal*(momemtum.magnitude() - energyRatio*momemtum.magnitude())
+
         other_relative_velocity = other_relative_momentum * (1/other.mass)
 
         self_relative_momentum = momemtum - other_relative_momentum
         self_relative_velocity = self_relative_momentum * (1/self.mass)
 
-        self.velocity = self_relative_velocity - other.velocity;
-        #other.velocity = other_relative_velocity
+        self.velocity = (self_relative_velocity*-1 + other.velocity) * -1 ;
+        other.velocity = (other_relative_velocity*-1 + other.velocity) ;
+
+
 
 
 
