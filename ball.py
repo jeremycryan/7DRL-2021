@@ -138,9 +138,9 @@ class Ball(PhysicsObject):
         print("wall");
 
         if(mapTile.down_bumper):
-            self.velocity.y = abs(self.velocity.y) * -1
-        if (mapTile.up_bumper):
             self.velocity.y = abs(self.velocity.y)
+        if (mapTile.up_bumper):
+            self.velocity.y = abs(self.velocity.y) * -1
         if (mapTile.left_bumper):
             self.velocity.x = abs(self.velocity.x) * -1
         if (mapTile.right_bumper):
@@ -205,6 +205,34 @@ class Ball(PhysicsObject):
 
         self.velocity = (self_relative_velocity + other.velocity) ;
         other.velocity = (other_relative_velocity*-1 + other.velocity) ;
+
+    def collide_with_wall_corner(self, wall_pose, wall_tile):
+
+        # Offset balls
+        collision_normal = self.pose - wall_pose
+
+        #NEED TO FIND OUT WHICH WALL CORNER AND MOVE POSE APPROPRIATELY
+        if(wall_tile.top_right_corner)
+            wall_pose.x += c.TILE_SIZE/2
+            wall_pose.y -= c.TILE_SIZE/2
+        if (wall_tile.top_left_corner)
+            wall_pose.x -= c.TILE_SIZE / 2
+            wall_pose.y -= c.TILE_SIZE / 2
+        if (wall_tile.bottom_right_corner)
+            wall_pose.x -= c.TILE_SIZE / 2
+            wall_pose.y += c.TILE_SIZE / 2
+        if (wall_tile.bottom_left_corner)
+            wall_pose.x -= c.TILE_SIZE / 2
+            wall_pose.y -= c.TILE_SIZE / 2
+
+        offset_required = (collision_normal.magnitude() - (self.radius + c.TILE_SIZE/6)) / 1.9
+        collision_normal.scale_to(1)
+
+        dot_product_self = collision_normal.x * self.velocity.x + collision_normal.y * self.velocity.y;
+
+        output_velocity_vector = (dot_product_self * collision_normal * 2 - self.velocity) * wall_tile.bounce_factor
+        pass
+
 
     def collide_with_other_ball_3(self, other):
         self.small_spark_explosion((self.pose.x, self.pose.y))
