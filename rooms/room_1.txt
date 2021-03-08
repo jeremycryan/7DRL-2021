@@ -1,13 +1,13 @@
 1234
 XXXXXXXXX..XXXXXXXXX
-XXXXXXXXX..XXXXXXXXX
 XP................PX
 X..................X
 X..................X
-....................
-....................
+X.......XXXX.......X
+........XXXX........
+........XXXX........
+X.......XXXX.......X
 X..................X
 X..................X
 XP................PX
-XXXXXXXXX..XXXXXXXXX
 XXXXXXXXX..XXXXXXXXX
