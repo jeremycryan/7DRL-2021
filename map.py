@@ -7,7 +7,7 @@ import constants as c
 
 
 class Map(GameObject):
-    def __init__(self, game, width=2, height=2):
+    def __init__(self, game, width=8, height=12):
         self.game = game
         self.width = width
         self.height = height
@@ -66,12 +66,14 @@ class Room(GameObject):
                       for y in range(c.ROOM_HEIGHT_TILES)]
         self.game = game
         self.openings = []
-        self.populate_from_path("rooms/room_0.txt")
+        path = f"rooms/room_{random.choice([0, 1, 2, 3])}.txt"
+        self.populate_from_path(path)
 
     def populate_from_path(self, path):
         with open(path) as f:
             lines = f.readlines()
-        for y, row in enumerate(lines):
+        self.openings = [char for char in lines[0].strip()]
+        for y, row in enumerate(lines[1:]):
             row = row.strip()
             for x, character in enumerate(row):
                 self.tiles[y][x] = Tile(self.game, character, self.x * c.ROOM_WIDTH_TILES + x, self.y * c.ROOM_HEIGHT_TILES + y)
