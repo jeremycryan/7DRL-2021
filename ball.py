@@ -3,6 +3,7 @@ import math
 
 from primitives import PhysicsObject, Pose
 import constants as c
+from particle import Spark
 
 
 class Ball(PhysicsObject):
@@ -22,6 +23,7 @@ class Ball(PhysicsObject):
         self.drag_multiplicative = drag_multiplicative
         self.drag_constant = drag_constant
         self._did_collide = False
+        self.outline_hidden = False
 
     def process_back_surface(self):
         self.back_surface = pygame.transform.scale(self.back_surface, (self.radius*4, self.radius*4))
@@ -110,6 +112,9 @@ class Ball(PhysicsObject):
         pass
 
     def collide_with_other_ball_2(self, other):
+        self.small_spark_explosion((self.pose.x, self.pose.y))
+        self.game.current_scene.shake(10, other.pose - self.pose)
+
         # Offset balls
         print(self.color)
         collision_normal = self.pose - other.pose
@@ -152,7 +157,35 @@ class Ball(PhysicsObject):
 
 
 
+    def collide_with_other_ball_3(self, other):
+        self.small_spark_explosion((self.pose.x, self.pose.y))
+        self.game.current_scene.shake(10, other.pose - self.pose)
 
+        to_other = other.pose - self.pose
+        relative_velocity = other.velocity - self.velocity
+        other.velocity -= relative_velocity
+        self.velocity -= relative_velocity
+
+        velocity_angle = math.atan2(self.velocity.y, self.velocity.x)
+        to_other_angle = math.atan2(to_other.y, to_other.x)
+        diff = to_other_angle - velocity_angle
+        diff = diff % (2*math.pi)
+        print(diff* 180/math.pi)
+        energy_transfer = abs(math.sin(diff))
+        magnitude = self.velocity.magnitude()
+        other_new = to_other.copy()
+        other_new.scale_to(magnitude * energy_transfer)
+        vel_change = other_new.copy()
+        vel_change.scale_to(magnitude * (1 - energy_transfer))
+        other.velocity = other_new
+        print(self.velocity)
+        self.velocity -= vel_change
+        print(self.velocity)
+        print(energy_transfer)
+        print()
+
+        other.velocity += relative_velocity
+        self.velocity += relative_velocity
 
 
 #in a direction
@@ -245,8 +278,9 @@ class Ball(PhysicsObject):
 
     def draw(self, screen, offset=(0, 0)):
 
-        for tile in self.game.current_scene.map.tiles_near(self.pose, self.radius):
-            pygame.draw.rect(screen, self.color, (tile.x * c.TILE_SIZE + offset[0], tile.y * c.TILE_SIZE + offset[1], c.TILE_SIZE, c.TILE_SIZE), 1)
+        if c.DEBUG:
+            for tile in self.game.current_scene.map.tiles_near(self.pose, self.radius):
+                pygame.draw.rect(screen, self.color, (tile.x * c.TILE_SIZE + offset[0], tile.y * c.TILE_SIZE + offset[1], c.TILE_SIZE, c.TILE_SIZE), 1)
 
         x, y = self.pose.get_position()
         x += offset[0]
@@ -265,10 +299,57 @@ class Ball(PhysicsObject):
         screen.blit(self.surf, (x, y))
         screen.blit(self.shading, (x, y), special_flags=pygame.BLEND_MULT)
 
-        pygame.draw.circle(screen, c.BLACK, (x+self.radius, y+self.radius), self.radius, 2)
+        if not self.outline_hidden:
+            pygame.draw.circle(screen, c.BLACK, (x+self.radius, y+self.radius), self.radius, 2)
 
     def draw_shadow(self, screen, offset=(0, 0)):
         x, y = self.pose.get_position()
         x += offset[0] - self.radius
         y += offset[1] - self.radius + self.radius//2
         screen.blit(self.shadow, (x, y))
+
+    def small_spark_explosion(self, position):
+        for i in range(10):
+            spark = Spark(self.game, *position)
+            self.game.current_scene.particles.append(spark)
+
+
+class Shelled(Ball):
+    def __init__(self, game, inner_ball, **kwargs):
+        super().__init__(game, **kwargs)
+        self.inner_ball = inner_ball
+        self.radius = self.inner_ball.radius * 1.5
+        self.shell_surf = pygame.Surface((self.radius*2, self.radius*2))
+        self.shell_surf.fill(c.MAGENTA)
+        pygame.draw.circle(self.shell_surf, (200, 220, 255), (self.radius, self.radius), self.radius)
+        self.shell_surf.set_colorkey(c.MAGENTA)
+        self.shell_surf.set_alpha(60)
+        self.inner_ball.outline_hidden = True
+        self.twinkle_surf = self.shell_surf.copy()
+        self.twinkle_surf.fill(c.BLACK)
+        pygame.draw.circle(self.twinkle_surf, c.WHITE, (self.radius*1.4, self.radius*0.55), self.radius*0.25)
+        pygame.draw.circle(self.twinkle_surf, c.WHITE, (self.radius * 1.7, self.radius * 0.7), self.radius * 0.1)
+        self.twinkle_surf.set_alpha(100)
+        self.twinkle_surf.set_colorkey(c.BLACK)
+        self.broken = False
+
+    def update(self, dt, events):
+        super().update(dt, events)
+        self.inner_ball.pose = self.pose.copy()
+
+    def draw(self, surf, offset=(0, 0)):
+        self.inner_ball.draw(surf, offset=offset)
+        x = self.pose.x + offset[0] - self.shell_surf.get_width()//2
+        y = self.pose.y + offset[1] - self.shell_surf.get_height()//2
+        surf.blit(self.shell_surf, (x, y))
+        if not self.outline_hidden:
+            pygame.draw.circle(surf, c.BLACK, (x+self.radius, y+self.radius), self.radius, 2)
+
+        diff = self.pose - self.initial_position
+        tx = 1 * math.sin(diff.x/7)
+        ty = 1 * math.cos(diff.y/7)
+        surf.blit(self.twinkle_surf, (x + tx, y + ty))
+
+    def draw_shadow(self, screen, offset=(0, 0)):
+        offset = (offset[0], offset[1] + self.inner_ball.radius*0.25)
+        self.inner_ball.draw_shadow(screen, offset=offset)
