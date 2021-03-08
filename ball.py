@@ -9,7 +9,7 @@ import time
 
 
 class Ball(PhysicsObject):
-    def __init__(self, game, x=0, y=0, radius=c.DEFAULT_BALL_RADIUS, drag_multiplicative= c.DEFAULT_BALL_MULT_DRAG, drag_constant = c.DEFAULT_BALL_CONSTANT_DRAG):
+    def __init__(self, game, x=0, y=0, radius=c.DEFAULT_BALL_RADIUS, drag_multiplicative= c.DEFAULT_BALL_MULT_DRAG, drag_constant = c.DEFAULT_BALL_CONSTANT_DRAG, max_speed = c.DEFAULT_BALL_MAX_SPEED):
         self.radius = radius
         self.mass = 1
         self.color = (255, 0, 0)  # This won't matter once we change drawing code
@@ -24,6 +24,7 @@ class Ball(PhysicsObject):
         self.initial_position = Pose((x, y), 0)
         self.drag_multiplicative = drag_multiplicative
         self.drag_constant = drag_constant
+        self.max_speed = max_speed
         self._did_collide = False
         self.outline_hidden = False
 
@@ -74,7 +75,8 @@ class Ball(PhysicsObject):
         self.update_collisions()
 
     def drag(self, dt):
-
+        if(self.velocity.magnitude() > self.max_speed):
+            self.velocity.scale_to(self.max_speed)
         self.velocity -= self.velocity * self.drag_multiplicative * dt;
         _temp_velocity = self.velocity.copy();
         _temp_velocity.scale_to(1);
@@ -115,8 +117,7 @@ class Ball(PhysicsObject):
         pass
 
     def collide_with_other_ball_2(self, other):
-        self.small_spark_explosion((self.pose.x, self.pose.y))
-        self.game.current_scene.shake(10, other.pose - self.pose)
+
 
         # Offset balls
         print(self.color)
@@ -125,6 +126,10 @@ class Ball(PhysicsObject):
         collision_normal.scale_to(1)
         self.pose -= collision_normal * offset_required
         other.pose += collision_normal * offset_required
+
+        spark_pose = self.pose - (self.pose - other.pose) * .5
+        self.small_spark_explosion((spark_pose.x, spark_pose.y))
+        self.game.current_scene.shake(10, other.pose - self.pose)
 
         relative_velocity = self.velocity - other.velocity;
         if(relative_velocity.magnitude() == 0):
@@ -140,10 +145,10 @@ class Ball(PhysicsObject):
 
         print(energyRatio)
 
-        if energyRatio<0.2:
-            energyRatio = 0.2
-        if energyRatio>.8:
-            energyRatio = .8
+        if energyRatio<0.01:
+            energyRatio = 0.01
+        if energyRatio>.99:
+            energyRatio = .99
 
 
         #self_relative_momentum = energyRatio*momemtum
@@ -155,10 +160,8 @@ class Ball(PhysicsObject):
         self_relative_momentum = momemtum + other_relative_momentum
         self_relative_velocity = self_relative_momentum * (1/self.mass)
 
-        self.velocity = (self_relative_velocity - other.velocity) ;
+        self.velocity = (self_relative_velocity + other.velocity) ;
         other.velocity = (other_relative_velocity*-1 + other.velocity) ;
-
-
 
     def collide_with_other_ball_3(self, other):
         self.small_spark_explosion((self.pose.x, self.pose.y))
@@ -205,7 +208,6 @@ class Ball(PhysicsObject):
 
 
         pass
-
 
     def collide_with_other_ball(self, other):
         # Offset balls
