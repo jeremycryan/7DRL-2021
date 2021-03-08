@@ -30,6 +30,7 @@ ROOM_HEIGHT_TILES = 12
 
 EMPTY = "."
 WALL = "X"
+POCKET = "P"
 
 FULLSCREEN = False
 

@@ -111,9 +111,12 @@ class Tile(GameObject):
         self.key = key
         self.collidable = True
         self.surface = pygame.Surface((c.TILE_SIZE, c.TILE_SIZE))
-        if key in [c.EMPTY]:
+        if key in [c.EMPTY, c.POCKET]:
             self.collidable = False
-            self.surface.fill((30, 80, 30))
+            if key == c.EMPTY:
+                self.surface.fill((30, 80, 30))
+            elif key == c.POCKET:
+                self.surface.fill(c.MAGENTA)
         else:
             self.surface.fill(c.BLACK)
 
