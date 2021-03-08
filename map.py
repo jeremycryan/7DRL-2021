@@ -36,7 +36,7 @@ class Map(GameObject):
             room.draw(surface, offset=offset)
 
     def tiles_near(self, pose, radius):
-        radius *= 1.25
+        radius *= 1.0
         min_x = int((pose.x - radius)/c.TILE_SIZE)
         min_y = int((pose.y - radius)/c.TILE_SIZE)
         max_x = int((pose.x + radius)/c.TILE_SIZE)
@@ -197,3 +197,11 @@ class Tile(GameObject):
                 surface.blit(bit, (x + c.TILE_SIZE - 10, y + c.TILE_SIZE//2 - 5))
             if self.left_bumper:
                 surface.blit(bit, (x, y + c.TILE_SIZE//2 - 5))
+            if self.bottom_left_corner:
+                surface.blit(bit, (x, y + c.TILE_SIZE - 10))
+            if self.top_left_corner:
+                surface.blit(bit, (x, y))
+            if self.top_right_corner:
+                surface.blit(bit, (x + c.TILE_SIZE - 10, y))
+            if self.bottom_right_corner:
+                surface.blit(bit, (x + c.TILE_SIZE - 10, y + c.TILE_SIZE - 10))
