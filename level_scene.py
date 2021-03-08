@@ -11,9 +11,9 @@ class LevelScene(Scene):
         self.player = Player(game, 200, 500)
         self.camera = Camera(game, self.player)
         self.balls = [self.player,
-                      Ball(self.game, 100, 50),
-                      Ball(self.game, 200, 100, 50),
-                      Ball(self.game, 350, 50),
+                      Ball(self.game, 300, 250),
+                      Ball(self.game, 400, 200, 50),
+                      Ball(self.game, 550, 150),
                       Shelled(self.game, Ball(self.game), x=500, y=500)]
         self.map = Map(self.game)
         self.particles = []

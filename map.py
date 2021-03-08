@@ -7,7 +7,7 @@ import constants as c
 
 
 class Map(GameObject):
-    def __init__(self, game, width=10, height=6):
+    def __init__(self, game, width=2, height=2):
         self.game = game
         self.width = width
         self.height = height
@@ -65,6 +65,16 @@ class Room(GameObject):
                        for x in range(c.ROOM_WIDTH_TILES)]
                       for y in range(c.ROOM_HEIGHT_TILES)]
         self.game = game
+        self.openings = []
+        self.populate_from_path("rooms/room_0.txt")
+
+    def populate_from_path(self, path):
+        with open(path) as f:
+            lines = f.readlines()
+        for y, row in enumerate(lines):
+            row = row.strip()
+            for x, character in enumerate(row):
+                self.tiles[y][x] = Tile(self.game, character, self.x * c.ROOM_WIDTH_TILES + x, self.y * c.ROOM_HEIGHT_TILES + y)
 
     def get_at(self, x, y):
         return self.tiles[int(y)][int(x)]
