@@ -72,6 +72,8 @@ class Room(GameObject):
     def add_tile_collisions(self):
         for tile in self.tile_iter():
             x, y = tile.x, tile.y
+            x -= self.x * c.ROOM_WIDTH_TILES
+            y -= self.y * c.ROOM_HEIGHT_TILES
             if x >= c.ROOM_WIDTH_TILES or y >= c.ROOM_HEIGHT_TILES:
                 continue
             if not tile.collidable:

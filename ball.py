@@ -147,6 +147,7 @@ class Ball(PhysicsObject):
         pass
     def do_collision(self, mapTile):
         print("wall");
+        self.game.current_scene.camera.shake(8 * self.velocity.magnitude()/500, pose=self.velocity)
 
         relative_position = self.pose - self.map_coordinate_to_pose(mapTile)
 
@@ -332,6 +333,7 @@ class Ball(PhysicsObject):
 
     def collide_with_tile(self, tile):
         # TODO
+        self.game.current_scene.camera.shake(5)
 
         # Offset balls
         collision_normal = self.pose - other.pose
