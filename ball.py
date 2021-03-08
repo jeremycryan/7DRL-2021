@@ -138,9 +138,9 @@ class Ball(PhysicsObject):
         print("wall");
 
         if(mapTile.down_bumper):
-            self.velocity.y = abs(self.velocity.y) * -1
-        if (mapTile.up_bumper):
             self.velocity.y = abs(self.velocity.y)
+        if (mapTile.up_bumper):
+            self.velocity.y = abs(self.velocity.y) * -1
         if (mapTile.left_bumper):
             self.velocity.x = abs(self.velocity.x) * -1
         if (mapTile.right_bumper):
