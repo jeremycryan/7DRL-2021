@@ -105,7 +105,8 @@ class Ball(PhysicsObject):
 
                 self._did_collide = True;
                 #self.collide_with_other_ball(ball) Don't need this, do both in one
-                ball.collide_with_other_ball_2(self)
+                self.collide_with_other_ball_3(ball)
+
                 break
         # TODO iterate through other balls and call self.collide_with_other_ball if colliding
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
@@ -149,7 +150,35 @@ class Ball(PhysicsObject):
         self.velocity = self_relative_velocity - other.velocity;
         #other.velocity = other_relative_velocity
 
+    def collide_with_other_ball_3(self, other):
+        self.small_spark_explosion((self.pose.x, self.pose.y))
+        self.game.current_scene.shake(10, other.pose - self.pose)
 
+        to_other = other.pose - self.pose
+        relative_velocity = other.velocity - self.velocity
+        other.velocity -= relative_velocity
+        self.velocity -= relative_velocity
+
+        velocity_angle = math.atan2(self.velocity.y, self.velocity.x)
+        to_other_angle = math.atan2(to_other.y, to_other.x)
+        diff = to_other_angle - velocity_angle
+        diff = diff % (2*math.pi)
+        print(diff* 180/math.pi)
+        energy_transfer = abs(math.sin(diff))
+        magnitude = self.velocity.magnitude()
+        other_new = to_other.copy()
+        other_new.scale_to(magnitude * energy_transfer)
+        vel_change = other_new.copy()
+        vel_change.scale_to(magnitude * (1 - energy_transfer))
+        other.velocity = other_new
+        print(self.velocity)
+        self.velocity -= vel_change
+        print(self.velocity)
+        print(energy_transfer)
+        print()
+
+        other.velocity += relative_velocity
+        self.velocity += relative_velocity
 
 
 #in a direction
