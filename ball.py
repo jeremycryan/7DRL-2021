@@ -137,21 +137,28 @@ class Ball(PhysicsObject):
     def do_collision(self, mapTile):
         print("wall");
 
-        if(mapTile.down_bumper):
+        relative_position = self.pose - self.map_coordinate_to_pose(mapTile)
+
+        if(mapTile.down_bumper and relative_position.y - self.radius - c.COLLIDER_SIZE >0 ):
             self.velocity.y = abs(self.velocity.y)
-        if (mapTile.up_bumper):
+        if (mapTile.up_bumper and relative_position.y + self.radius + c.COLLIDER_SIZE <0):
             self.velocity.y = abs(self.velocity.y) * -1
-        if (mapTile.left_bumper):
+        if (mapTile.left_bumper and relative_position.x + self.radius + c.COLLIDER_SIZE <0):
             self.velocity.x = abs(self.velocity.x) * -1
-        if (mapTile.right_bumper):
+        if (mapTile.right_bumper and relative_position.x - self.radius - c.COLLIDER_SIZE >0):
             self.velocity.x = abs(self.velocity.x)
 
+        self.velocity.scale_to(self.velocity.magnitude() * mapTile.bounce_factor)
+        if(self.velocity.magnitude() < c.MIN_WALL_BOUNCE_SPEED):
+            self.velocity.scale_to(c.MIN_WALL_BOUNCE_SPEED)
 
     def do_corner_collision(self, mapTile):
-        if not (mapTile.top_right_corner or mapTile.top_left_corner or mapTile.bottom_right_corner or mapTile.bottom_left_corner):
+        if (mapTile.top_right_corner or mapTile.top_left_corner or mapTile.bottom_right_corner or mapTile.bottom_left_corner):
+            print("wall_corner_fail");
             self.do_collision(mapTile)
             return()
 
+        self.collide_with_wall_corner(self.map_coordinate_to_pose(mapTile), mapTile)
         print("wall_corner");
 
         return ()
@@ -212,16 +219,16 @@ class Ball(PhysicsObject):
         collision_normal = self.pose - wall_pose
 
         #NEED TO FIND OUT WHICH WALL CORNER AND MOVE POSE APPROPRIATELY
-        if(wall_tile.top_right_corner)
+        if(wall_tile.top_right_corner):
             wall_pose.x += c.TILE_SIZE/2
             wall_pose.y -= c.TILE_SIZE/2
-        if (wall_tile.top_left_corner)
+        if (wall_tile.top_left_corner):
             wall_pose.x -= c.TILE_SIZE / 2
             wall_pose.y -= c.TILE_SIZE / 2
-        if (wall_tile.bottom_right_corner)
+        if (wall_tile.bottom_right_corner):
             wall_pose.x -= c.TILE_SIZE / 2
             wall_pose.y += c.TILE_SIZE / 2
-        if (wall_tile.bottom_left_corner)
+        if (wall_tile.bottom_left_corner):
             wall_pose.x -= c.TILE_SIZE / 2
             wall_pose.y -= c.TILE_SIZE / 2
 
@@ -230,7 +237,7 @@ class Ball(PhysicsObject):
 
         dot_product_self = collision_normal.x * self.velocity.x + collision_normal.y * self.velocity.y;
 
-        output_velocity_vector = (dot_product_self * collision_normal * 2 - self.velocity) * wall_tile.bounce_factor
+        output_velocity_vector = (collision_normal * 2 * dot_product_self - self.velocity) * wall_tile.bounce_factor
         pass
 
 

@@ -80,6 +80,7 @@ class Room(GameObject):
             tile.right_bumper = True
             tile.down_bumper = True
             tile.up_bumper = True
+
             if x==0 or self.tiles[y][x-1].collidable:
                 tile.left_bumper = False
             if y==0 or self.tiles[y-1][x].collidable:
@@ -88,6 +89,16 @@ class Room(GameObject):
                 tile.right_bumper = False
             if y>=(c.ROOM_HEIGHT_TILES-1) or self.tiles[y+1][x].collidable:
                 tile.down_bumper = False
+
+            if(tile.up_bumper and tile.right_bumper):
+                tile.top_right_corner = True
+            if (tile.up_bumper and tile.left_bumper):
+                tile.top_left_corner = True
+            if (tile.down_bumper and tile.right_bumper):
+                tile.bottom_right_corner = True
+            if (tile.down_bumper and tile.left_bumper):
+                tile.bottom_left_corner_left_corner = True
+
 
     def populate_from_path(self, path):
         with open(path) as f:
@@ -126,7 +137,7 @@ class Room(GameObject):
 
 
 class Tile(GameObject):
-    def __init__(self, game, key, x, y, top_right_corner = False, top_left_corner = False, bottom_right_corner = False, bottom_left_corner = False, down_bumper = False, up_bumper = False, left_bumper = False, right_bumper = False, bounce_factor = .9):
+    def __init__(self, game, key, x, y, top_right_corner = False, top_left_corner = False, bottom_right_corner = False, bottom_left_corner = False, down_bumper = False, up_bumper = False, left_bumper = False, right_bumper = False, bounce_factor = .8):
         self.game = game
 
         self.key = key
