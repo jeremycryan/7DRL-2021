@@ -97,12 +97,15 @@ class Ball(PhysicsObject):
     def update_collisions(self):
 
         balls = self.game.current_scene.balls;
+        mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1.25);
 
         #check for collisions
         for ball in balls:
             if ball is self:
                 continue
-            if ball._did_collide or self._did_collide:
+            if self._did_collide:
+                return
+            if ball._did_collide:
                 continue
             if (self.pose - ball.pose).magnitude() < self.radius + ball.radius:
                 #It Hit
@@ -112,9 +115,49 @@ class Ball(PhysicsObject):
                 self.collide_with_other_ball_2(ball)
                 #ball.collide_with_other_ball_2(self)
                 break
+
+        for mapTile in mapTiles:
+            relative_pose = (self.map_coordinate_to_pose(mapTile) - self.pose)
+            #if self._did_collide: Probably don't need or want this here
+            #   return
+            if (abs(relative_pose.x) > c.TILE_SIZE/2 + self.radius*.5 and abs(relative_pose.x) < c.TILE_SIZE/2 + self.radius*1.5 and \
+                abs(relative_pose.y) > c.TILE_SIZE/2 + self.radius*.5 and abs(relative_pose.y) < c.TILE_SIZE/2 + self.radius*1.5 and mapTile.collidable):
+                self.do_corner_collision(mapTile)
+                continue
+            if mapTile.collidable and (abs(relative_pose.x) < c.TILE_SIZE/2 + self.radius and abs(relative_pose.y) < c.TILE_SIZE/2 + self.radius):
+                self.do_collision(mapTile)
+
+
+
+
+
         # TODO iterate through other balls and call self.collide_with_other_ball if colliding
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
         pass
+    def do_collision(self, mapTile):
+        print("wall");
+
+        if(mapTile.down_bumper):
+            self.velocity.y = abs(self.velocity.y) * -1
+        if (mapTile.up_bumper):
+            self.velocity.y = abs(self.velocity.y)
+        if (mapTile.left_bumper):
+            self.velocity.x = abs(self.velocity.x) * -1
+        if (mapTile.right_bumper):
+            self.velocity.x = abs(self.velocity.x)
+
+
+    def do_corner_collision(self, mapTile):
+        if not (mapTile.top_right_corner or mapTile.top_left_corner or mapTile.bottom_right_corner or mapTile.bottom_left_corner):
+            self.do_collision(mapTile)
+            return()
+
+        print("wall_corner");
+
+        return ()
+
+    def map_coordinate_to_pose(self, mapTile):
+        return(Pose(((mapTile.x * c.TILE_SIZE) + c.TILE_SIZE/2, mapTile.y * c.TILE_SIZE + c.TILE_SIZE/2 ) ,0)) #offset by tilezise /2 to get center
 
     def collide_with_other_ball_2(self, other):
 
