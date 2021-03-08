@@ -69,6 +69,26 @@ class Room(GameObject):
         path = f"rooms/room_{random.choice([0, 1, 2, 3])}.txt"
         self.populate_from_path(path)
 
+    def add_tile_collisions(self):
+        for tile in self.tile_iter():
+            x, y = tile.x, tile.y
+            if x >= c.ROOM_WIDTH_TILES or y >= c.ROOM_HEIGHT_TILES:
+                continue
+            if not tile.collidable:
+                continue
+            tile.left_bumper = True
+            tile.right_bumper = True
+            tile.down_bumper = True
+            tile.up_bumper = True
+            if x==0 or self.tiles[y][x-1].collidable:
+                tile.left_bumper = False
+            if y==0 or self.tiles[y-1][x].collidable:
+                tile.up_bumper = False
+            if x>=(c.ROOM_WIDTH_TILES-1) or self.tiles[y][x+1].collidable:
+                tile.right_bumper = False
+            if y>=(c.ROOM_HEIGHT_TILES-1) or self.tiles[y+1][x].collidable:
+                tile.down_bumper = False
+
     def populate_from_path(self, path):
         with open(path) as f:
             lines = f.readlines()
@@ -77,6 +97,7 @@ class Room(GameObject):
             row = row.strip()
             for x, character in enumerate(row):
                 self.tiles[y][x] = Tile(self.game, character, self.x * c.ROOM_WIDTH_TILES + x, self.y * c.ROOM_HEIGHT_TILES + y)
+        self.add_tile_collisions()
 
     def get_at(self, x, y):
         return self.tiles[int(y)][int(x)]
@@ -120,9 +141,13 @@ class Tile(GameObject):
         self.left_bumper = left_bumper
         self.right_bumper = right_bumper
         self.bounce_factor = bounce_factor
-        if key in [c.EMPTY]:
+
+        if key in [c.EMPTY, c.POCKET]:
             self.collidable = False
-            self.surface.fill((30, 80, 30))
+            if key == c.EMPTY:
+                self.surface.fill((30, 80, 30))
+            elif key == c.POCKET:
+                self.surface.fill(c.MAGENTA)
         else:
             self.surface.fill(c.BLACK)
 
@@ -138,3 +163,15 @@ class Tile(GameObject):
         if x < -c.TILE_SIZE or x > c.WINDOW_WIDTH or y < -c.TILE_SIZE or y > c.WINDOW_HEIGHT:
             return
         surface.blit(self.surface, (x, y))
+
+        if c.DEBUG:
+            bit = pygame.Surface((10, 10))
+            bit.fill((100, 150, 100))
+            if self.up_bumper:
+                surface.blit(bit, (x+c.TILE_SIZE//2 - 5, y))
+            if self.down_bumper:
+                surface.blit(bit, (x + c.TILE_SIZE//2 - 5, y + c.TILE_SIZE-10))
+            if self.right_bumper:
+                surface.blit(bit, (x + c.TILE_SIZE - 10, y + c.TILE_SIZE//2 - 5))
+            if self.left_bumper:
+                surface.blit(bit, (x, y + c.TILE_SIZE//2 - 5))
