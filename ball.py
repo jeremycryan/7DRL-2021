@@ -127,48 +127,78 @@ class Ball(PhysicsObject):
                 #ball.collide_with_other_ball_2(self)
                 break
 
-        for mapTile in mapTiles:
-            relative_pose = (self.map_coordinate_to_pose(mapTile) - self.pose)
-            #if self._did_collide: Probably don't need or want this here
-            #   return
-            if (abs(relative_pose.x) > c.TILE_SIZE/2 + self.radius*.5 and abs(relative_pose.x) < c.TILE_SIZE/2 + self.radius*1.5 and \
-                abs(relative_pose.y) > c.TILE_SIZE/2 + self.radius*.5 and abs(relative_pose.y) < c.TILE_SIZE/2 + self.radius*1.5 and mapTile.collidable):
-                self.do_corner_collision(mapTile)
+        for mapTile in mapTiles: #CORNERS FIRST
+
+            if not (mapTile.top_right_corner or mapTile.top_left_corner or mapTile.bottom_right_corner or mapTile.bottom_left_corner):
                 continue
+
+            relative_pose = (self.map_coordinate_to_pose(mapTile) - self.pose)
+
             if mapTile.collidable and (abs(relative_pose.x) < c.TILE_SIZE/2 + self.radius and abs(relative_pose.y) < c.TILE_SIZE/2 + self.radius):
+                if(mapTile.top_left_corner):
+                    temp_pose = relative_pose.copy()
+                    temp_pose.x += c.TILE_SIZE/2
+                    temp_pose.y += c.TILE_SIZE/2
+                    if(temp_pose.magnitude()< c.TILE_SIZE + self.radius):
+                        self.collide_with_wall_corner_2(temp_pose, mapTile)
+                elif(mapTile.top_right_corner):
+                    temp_pose = relative_pose.copy()
+                    temp_pose.x -= c.TILE_SIZE / 2
+                    temp_pose.y += c.TILE_SIZE / 2
+                    if (temp_pose.magnitude() < c.TILE_SIZE + self.radius):
+                        self.collide_with_wall_corner_2(temp_pose, mapTile)
+                elif(mapTile.bottom_left_corner):
+                    temp_pose = relative_pose.copy()
+                    temp_pose.x += c.TILE_SIZE / 2
+                    temp_pose.y -= c.TILE_SIZE / 2
+                    if (temp_pose.magnitude() < c.TILE_SIZE + self.radius):
+                        self.collide_with_wall_corner_2(temp_pose, mapTile)
+                elif(mapTile.bottom_right_corner):
+                    temp_pose = relative_pose.copy()
+                    temp_pose.x -= c.TILE_SIZE / 2
+                    temp_pose.y -= c.TILE_SIZE / 2
+                    if (temp_pose.magnitude() < c.TILE_SIZE + self.radius):
+                        self.collide_with_wall_corner_2(temp_pose, mapTile)
+
+        mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1.25);
+        for mapTile in mapTiles:  # CORNERS FIRST
+            if (mapTile.top_right_corner or mapTile.top_left_corner or mapTile.bottom_right_corner or mapTile.bottom_left_corner):
+                continue
+            relative_pose = (self.map_coordinate_to_pose(mapTile) - self.pose)
+
+            if mapTile.collidable and (abs(relative_pose.x) < c.TILE_SIZE / 2 + self.radius and abs(relative_pose.y) < c.TILE_SIZE / 2 + self.radius):
                 self.do_collision(mapTile)
-
-
-
-
 
         # TODO iterate through other balls and call self.collide_with_other_ball if colliding
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
         pass
     def do_collision(self, mapTile):
-        print("wall");
+        #return()
+        #print("wall");
         self.game.current_scene.camera.shake(8 * self.velocity.magnitude()/500, pose=self.velocity)
 
-        relative_position = self.pose - self.map_coordinate_to_pose(mapTile)
+        #relative_position = self.pose - self.map_coordinate_to_pose(mapTile)
 
-        if(mapTile.down_bumper and relative_position.y - self.radius - c.COLLIDER_SIZE >0 ):
+        if mapTile.down_bumper :#and relative_position.y - self.radius - c.COLLIDER_SIZE >0 :
             self.velocity.y = abs(self.velocity.y)
-        if (mapTile.up_bumper and relative_position.y + self.radius + c.COLLIDER_SIZE <0):
+        elif mapTile.up_bumper :#and relative_position.y + self.radius + c.COLLIDER_SIZE <0:
             self.velocity.y = abs(self.velocity.y) * -1
-        if (mapTile.left_bumper and relative_position.x + self.radius + c.COLLIDER_SIZE <0):
+            print("up bumper")
+        elif mapTile.left_bumper :#and relative_position.x + self.radius + c.COLLIDER_SIZE <0:
             self.velocity.x = abs(self.velocity.x) * -1
-        if (mapTile.right_bumper and relative_position.x - self.radius - c.COLLIDER_SIZE >0):
+        elif mapTile.right_bumper :#and relative_position.x - self.radius - c.COLLIDER_SIZE >0:
             self.velocity.x = abs(self.velocity.x)
 
-        self.velocity.scale_to(self.velocity.magnitude() * mapTile.bounce_factor)
         if(self.velocity.magnitude() < c.MIN_WALL_BOUNCE_SPEED):
             self.velocity.scale_to(c.MIN_WALL_BOUNCE_SPEED)
+        if(self.velocity.magnitude() > c.MIN_BOUNCE_REDUCTION_SPEED or mapTile.bounce_factor > 1):
+            self.velocity.scale_to(self.velocity.magnitude() * mapTile.bounce_factor)
 
     def do_corner_collision(self, mapTile):
-        if (mapTile.top_right_corner or mapTile.top_left_corner or mapTile.bottom_right_corner or mapTile.bottom_left_corner):
-            print("wall_corner_fail");
-            self.do_collision(mapTile)
-            return()
+        #if (mapTile.top_right_corner or mapTile.top_left_corner or mapTile.bottom_right_corner or mapTile.bottom_left_corner):
+        #    print("wall_corner_fail");
+        #    self.do_collision(mapTile)
+        #    return()
 
         self.collide_with_wall_corner(self.map_coordinate_to_pose(mapTile), mapTile)
         print("wall_corner");
@@ -231,6 +261,8 @@ class Ball(PhysicsObject):
         # Offset balls
         collision_normal = self.pose - wall_pose
 
+
+
         #NEED TO FIND OUT WHICH WALL CORNER AND MOVE POSE APPROPRIATELY
         if(wall_tile.top_right_corner):
             wall_pose.x += c.TILE_SIZE/2
@@ -253,6 +285,30 @@ class Ball(PhysicsObject):
         output_velocity_vector = (collision_normal * 2 * dot_product_self - self.velocity) * wall_tile.bounce_factor
         pass
 
+    def collide_with_wall_corner_2(self, relative_pose, wall_tile):
+
+        print("Wall_corner")
+        self.game.current_scene.camera.shake(8 * self.velocity.magnitude()/500, pose=self.velocity)
+
+        center_ball_2_center_wall = relative_pose.copy()
+        # Offset balls
+        collision_normal = center_ball_2_center_wall.copy()
+
+        offset_required = (collision_normal.magnitude() - (self.radius + c.TILE_SIZE))
+        collision_normal.scale_to(1)
+        self.pose += collision_normal * offset_required #THIS MIGHT BE REVERSED
+
+        # NEED TO FIND OUT WHICH WALL CORNER AND MOVE POSE APPROPRIATELY
+
+        dot_product_self = collision_normal.x * self.velocity.x + collision_normal.y * self.velocity.y;
+
+        self.velocity = (collision_normal * 2 * dot_product_self - self.velocity) * wall_tile.bounce_factor * -1
+
+        if (self.velocity.magnitude() < c.MIN_WALL_BOUNCE_SPEED):
+            self.velocity.scale_to(c.MIN_WALL_BOUNCE_SPEED)
+        if (self.velocity.magnitude() > c.MIN_BOUNCE_REDUCTION_SPEED or wall_tile.bounce_factor > 1):
+            self.velocity.scale_to(self.velocity.magnitude() * wall_tile.bounce_factor)
+        pass
 
     def collide_with_other_ball_3(self, other):
         self.small_spark_explosion((self.pose.x, self.pose.y))

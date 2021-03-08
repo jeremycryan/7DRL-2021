@@ -94,12 +94,20 @@ class Room(GameObject):
 
             if(tile.up_bumper and tile.right_bumper):
                 tile.top_right_corner = True
-            if (tile.up_bumper and tile.left_bumper):
+                tile.up_bumper = False
+                tile.right_bumper = False;
+            elif (tile.up_bumper and tile.left_bumper):
                 tile.top_left_corner = True
-            if (tile.down_bumper and tile.right_bumper):
+                tile.up_bumper = False
+                tile.left_bumper = False;
+            elif (tile.down_bumper and tile.right_bumper):
                 tile.bottom_right_corner = True
-            if (tile.down_bumper and tile.left_bumper):
-                tile.bottom_left_corner_left_corner = True
+                tile.down_bumper = False
+                tile.right_bumper = False
+            elif (tile.down_bumper and tile.left_bumper):
+                tile.bottom_left_corner = True
+                tile.down_bumper = False
+                tile.left_bumper = False
 
 
     def populate_from_path(self, path):
