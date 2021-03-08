@@ -177,14 +177,15 @@ class Ball(PhysicsObject):
         self.pose -= collision_normal * offset_required
         other.pose += collision_normal * offset_required
 
-        spark_pose = self.pose - (self.pose - other.pose) * .5
-        self.small_spark_explosion((spark_pose.x, spark_pose.y))
-        self.game.current_scene.shake(10, other.pose - self.pose)
 
         relative_velocity = self.velocity - other.velocity;
         if(relative_velocity.magnitude() == 0):
             return
 
+        spark_pose = self.pose - (self.pose - other.pose) * .5
+        intensity = min(relative_velocity.magnitude()**1.5/3000, 1)
+        self.small_spark_explosion((spark_pose.x, spark_pose.y), intensity=relative_velocity.magnitude()**1.5/3000)
+        self.game.current_scene.shake(10 * intensity + 2, other.pose - self.pose)
 
         other_relative_vector = collision_normal
         momemtum = relative_velocity * self.mass
@@ -400,9 +401,11 @@ class Ball(PhysicsObject):
         y += offset[1] - self.radius + self.radius//2
         screen.blit(self.shadow, (x, y))
 
-    def small_spark_explosion(self, position):
+    def small_spark_explosion(self, position, intensity=1):
+        # intensity is scaled to range 0.1-1
+        intensity = min(max(intensity, 0.1), 1)
         for i in range(10):
-            spark = Spark(self.game, *position)
+            spark = Spark(self.game, *position, intensity=intensity)
             self.game.current_scene.particles.append(spark)
 
 

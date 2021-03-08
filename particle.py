@@ -39,17 +39,18 @@ class Particle(GameObject):
 
 
 class Spark(Particle):
-    def __init__(self, game, x, y):
+    def __init__(self, game, x, y, intensity=1):
         super().__init__(game)
         self.game = game
         self.pose = Pose((x, y), 0)
-        speed = random.random() * 1000
+        speed = random.random() * 1000 * intensity
         angle = random.random() * 360
         self.velocity = Pose((speed, 0), 0)
         self.velocity.rotate_position(angle)
         self.radius = 5
         self.color = c.WHITE
         self.duration = 0.2
+        self.intensity = intensity
 
     def update(self, dt, events):
         super().update(dt, events)
@@ -70,7 +71,7 @@ class Spark(Particle):
         surface.blit(surf, (x, y))
 
     def get_alpha(self):
-        return (1 - self.through()) * 255
+        return (1 - self.through()) * 255 * self.intensity
 
     def get_scale(self):
-        return 1 - self.through()
+        return (1 - self.through()) * self.intensity

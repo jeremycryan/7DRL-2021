@@ -137,7 +137,16 @@ class Room(GameObject):
 
 
 class Tile(GameObject):
-    def __init__(self, game, key, x, y, top_right_corner = False, top_left_corner = False, bottom_right_corner = False, bottom_left_corner = False, down_bumper = False, up_bumper = False, left_bumper = False, right_bumper = False, bounce_factor = .8):
+    def __init__(self, game, key, x, y,
+                 top_right_corner = False,
+                 top_left_corner = False,
+                 bottom_right_corner = False,
+                 bottom_left_corner = False,
+                 down_bumper = False,
+                 up_bumper = False,
+                 left_bumper = False,
+                 right_bumper = False,
+                 bounce_factor = .95):
         self.game = game
 
         self.key = key
