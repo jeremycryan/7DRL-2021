@@ -97,7 +97,7 @@ class Ball(PhysicsObject):
         for ball in balls:
             if ball is self:
                 continue
-            if ball._did_collide:
+            if ball._did_collide or self._did_collide:
                 continue
             if (self.pose - ball.pose).magnitude() < self.radius + ball.radius:
                 #It Hit
@@ -137,10 +137,10 @@ class Ball(PhysicsObject):
 
         print(energyRatio)
 
-        if energyRatio<0.1:
-            energyRatio = 0.1
-        if energyRatio>.98:
-            energyRatio = .98
+        if energyRatio<0.2:
+            energyRatio = 0.2
+        if energyRatio>.8:
+            energyRatio = .8
 
 
         #self_relative_momentum = energyRatio*momemtum
@@ -149,10 +149,10 @@ class Ball(PhysicsObject):
 
         other_relative_velocity = other_relative_momentum * (1/other.mass)
 
-        self_relative_momentum = momemtum - other_relative_momentum
+        self_relative_momentum = momemtum + other_relative_momentum
         self_relative_velocity = self_relative_momentum * (1/self.mass)
 
-        self.velocity = (self_relative_velocity*-1 + other.velocity) * -1 ;
+        self.velocity = (self_relative_velocity - other.velocity) ;
         other.velocity = (other_relative_velocity*-1 + other.velocity) ;
 
 
@@ -171,7 +171,16 @@ class Ball(PhysicsObject):
         diff = to_other_angle - velocity_angle
         diff = diff % (2*math.pi)
         print(diff* 180/math.pi)
+
         energy_transfer = abs(math.sin(diff))
+        collision_normal = to_other.copy()
+        collision_normal.scale_to(1)
+        dot_product_vectors = collision_normal.x * self.velocity.x + collision_normal.y * self.velocity.y;
+
+        energy_transfer = math.sin( math.acos(dot_product_vectors / (collision_normal.magnitude() * self.velocity.magnitude())))
+        energy_transfer = (energy_transfer -1)*-1
+        energy_transfer = .01
+
         magnitude = self.velocity.magnitude()
         other_new = to_other.copy()
         other_new.scale_to(magnitude * energy_transfer)
