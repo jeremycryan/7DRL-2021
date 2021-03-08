@@ -94,12 +94,15 @@ class Ball(PhysicsObject):
     def update_collisions(self):
 
         balls = self.game.current_scene.balls;
+        mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1.25);
 
         #check for collisions
         for ball in balls:
             if ball is self:
                 continue
-            if ball._did_collide or self._did_collide:
+            if self._did_collide:
+                return
+            if ball._did_collide:
                 continue
             if (self.pose - ball.pose).magnitude() < self.radius + ball.radius:
                 #It Hit
@@ -109,9 +112,32 @@ class Ball(PhysicsObject):
                 self.collide_with_other_ball_2(ball)
                 #ball.collide_with_other_ball_2(self)
                 break
+
+        for mapTile in mapTiles:
+            if self._did_collide:
+                return
+            if mapTile.collidable and (abs(self.map_coordinate_to_pose(mapTile).x - self.pose.x) < c.TILE_SIZE or abs(self.map_coordinate_to_pose(mapTile).y - self.pose.y) < c.TILE_SIZE):
+                self.do_collision(mapTile)
+            #if((self.map_coordinate_to_pose(mapTile) - self.pose).magnitude() < self.radius):
+            #    self.do_collision(mapTile)
+
+
+
+
         # TODO iterate through other balls and call self.collide_with_other_ball if colliding
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
         pass
+    def do_collision(self, mapTile):
+        print("wall");
+        return(True)
+
+    def do_corner_collision(self, mapTile):
+        print("wall_corner");
+        #pass to do collision if not corner
+        return (True)
+
+    def map_coordinate_to_pose(self, mapTile):
+        return(Pose((mapTile.x * c.TILE_SIZE, mapTile.y * c.TILE_SIZE),0)) #offset by tilezise /2 to get center
 
     def collide_with_other_ball_2(self, other):
 

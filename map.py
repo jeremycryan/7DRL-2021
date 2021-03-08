@@ -93,12 +93,20 @@ class Room(GameObject):
 
 
 class Tile(GameObject):
-    def __init__(self, game, key, x, y):
+    def __init__(self, game, key, x, y, top_right_corner = False, top_left_corner = False, bottom_right_corner = False, bottom_left_corner = False, down_bumper = False, up_bumper = False, left_bumper = False, right_bumper = False):
         self.game = game
 
         self.key = key
         self.collidable = True
         self.surface = pygame.Surface((c.TILE_SIZE, c.TILE_SIZE))
+        self.top_right_corner = top_right_corner
+        self.top_left_corner = top_left_corner
+        self.bottom_right_corner = bottom_right_corner
+        self.bottom_left_corner = bottom_left_corner
+        self.down_bumper = down_bumper
+        self.up_bumper = up_bumper
+        self.left_bumper = left_bumper
+        self.right_bumper = right_bumper
         if key in [c.EMPTY]:
             self.collidable = False
             self.surface.fill((30, 80, 30))
