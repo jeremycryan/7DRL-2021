@@ -17,6 +17,7 @@ class LevelScene(Scene):
                       Shelled(self.game, Ball(self.game), x=500, y=500)]
         self.map = Map(self.game)
         self.particles = []
+        self.floor_particles = []
 
     def shake(self, amt, pose=None):
         self.camera.shake(amt, pose)
@@ -31,6 +32,11 @@ class LevelScene(Scene):
         for particle in self.particles[:]:
             if particle.dead:
                 self.particles.remove(particle)
+        for particle in self.floor_particles:
+            particle.update(dt, events)
+        for particle in self.floor_particles[:]:
+            if particle.dead:
+                self.floor_particles.remove(particle)
         self.map.update(dt, events)
         self.camera.update(dt, events)
         pass
@@ -39,6 +45,8 @@ class LevelScene(Scene):
         surface.fill((30, 80, 30))
         offset = self.camera.add_offset(offset)
         self.map.draw(surface, offset=offset)
+        for particle in self.floor_particles:
+            particle.draw(surface, offset=offset)
         for ball in self.balls:
             ball.draw_shadow(surface, offset=offset)
         for ball in self.balls:

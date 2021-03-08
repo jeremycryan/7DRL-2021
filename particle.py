@@ -75,3 +75,32 @@ class Spark(Particle):
 
     def get_scale(self):
         return (1 - self.through()) * self.intensity
+
+
+class SmokeBit(Particle):
+    def __init__(self, game, x, y):
+        super().__init__(game)
+        self.radius = 15 + random.random()*15
+        self.duration = self.radius * 0.05
+        speed = random.random() * 60
+        angle = random.random() * 360
+        self.velocity = Pose((speed, 0), 0)
+        self.velocity.rotate_position(angle)
+        self.pose = Pose((x, y), 0)
+
+    def get_alpha(self):
+        return 255
+
+    def update(self, dt, events):
+        super().update(dt, events)
+        self.pose += self.velocity * dt
+        self.velocity *= 0.3**dt
+
+    def get_scale(self):
+        return 1 - self.through(2)
+
+    def draw(self, surf, offset=(0, 0)):
+        x = self.pose.x + offset[0]
+        y = self.pose.y + offset[1]
+        radius = self.radius * self.get_scale()
+        pygame.draw.circle(surf, (200, 200, 200), (x, y), radius)

@@ -3,7 +3,7 @@ import math
 
 from primitives import PhysicsObject, Pose
 import constants as c
-from particle import Spark
+from particle import Spark, SmokeBit
 import random
 import time
 
@@ -27,6 +27,7 @@ class Ball(PhysicsObject):
         self.max_speed = max_speed
         self._did_collide = False
         self.outline_hidden = False
+        self.since_smoke = 0
 
     def process_back_surface(self):
         self.back_surface = pygame.transform.scale(self.back_surface, (self.radius*4, self.radius*4)).convert()
@@ -71,6 +72,16 @@ class Ball(PhysicsObject):
         super().update(dt, events)  # update position based on velocity, velocity based on acceleration
 
         self.drag(dt)
+        self.since_smoke += dt
+        period = 0.04
+        while self.since_smoke > period:
+            min_vel = 350
+            max_vel = 500
+            mag = self.velocity.magnitude()
+            if mag > min_vel:
+                num = min((mag - min_vel)/(max_vel - min_vel), 1) * 5
+                self.make_smoke((self.pose.x, self.pose.y), int(num))
+            self.since_smoke -= period
 
         self.update_collisions()
 
@@ -407,6 +418,12 @@ class Ball(PhysicsObject):
         for i in range(10):
             spark = Spark(self.game, *position, intensity=intensity)
             self.game.current_scene.particles.append(spark)
+
+    def make_smoke(self, position, num):
+        for i in range(num):
+            smoke = SmokeBit(self.game, *position)
+            smoke.radius *= self.radius/60
+            self.game.current_scene.floor_particles.append(smoke)
 
 
 class Shelled(Ball):
