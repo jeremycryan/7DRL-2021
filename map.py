@@ -72,7 +72,7 @@ class Room(GameObject):
                       for y in range(c.ROOM_HEIGHT_TILES)]
         self.game = game
         self.openings = []
-        path = f"rooms/room_{random.choice([0, 1, 2, 3])}.txt"
+        path = f"rooms/room_{random.choice(c.ROOMS)}.txt"
         self.pockets = []
         self.populate_from_path(path)
 
@@ -194,7 +194,7 @@ class Tile(GameObject):
         self.right_bumper = right_bumper
         self.bounce_factor = bounce_factor
 
-        if key in [c.EMPTY, c.POCKET]:
+        if key in [c.EMPTY, c.POCKET, c.LEFT_WALL, c.RIGHT_WALL, c.DOWN_WALL, c.UP_WALL]:
             self.collidable = False
             if key == c.EMPTY or key==c.POCKET:
                 self.surface.fill((30, 80, 30))
@@ -207,6 +207,13 @@ class Tile(GameObject):
         self.y = y
 
     def update(self, dt, events):
+        pass
+
+    def doors_close(self):
+        if self.key in [c.UP_WALL, c.DOWN_WALL, c.LEFT_WALL, c.RIGHT_WALL]:
+            self.collidable = True
+
+    def doors_open(self):
         pass
 
     def draw(self, surface, offset=(0, 0)):

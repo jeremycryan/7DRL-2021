@@ -39,6 +39,12 @@ ROOM_HEIGHT_TILES = 12
 EMPTY = "."
 WALL = "X"
 POCKET = "P"
+UP_WALL = "U"
+DOWN_WALL = "D"
+LEFT_WALL = "L"
+RIGHT_WALL = "R"
+
+ROOMS = [0, 1, 2, 3]
 
 FULLSCREEN = False
 
