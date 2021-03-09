@@ -44,7 +44,7 @@ DOWN_WALL = "D"
 LEFT_WALL = "L"
 RIGHT_WALL = "R"
 
-ROOMS = [0, 1, 2, 3]
+ROOMS = [4]
 
 FULLSCREEN = False
 
