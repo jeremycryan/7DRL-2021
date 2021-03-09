@@ -28,6 +28,7 @@ class Ball(PhysicsObject):
         self._did_collide = False
         self._did_collide_wall = False
         self.outline_hidden = False
+        self.rotational_velocity = Pose((0, 0), 0)
         self.since_smoke = 0
 
     def process_back_surface(self):
@@ -85,6 +86,21 @@ class Ball(PhysicsObject):
             self.since_smoke -= period
 
         self.update_collisions()
+
+        #ROLL DELAY CODE
+        if(self.velocity.magnitude() + self.rotational_velocity.magnitude() != 0):
+            _factor_weight = self.velocity.magnitude()/(self.velocity.magnitude() + self.rotational_velocity.magnitude())
+        else:
+            _factor_weight = 0
+        _temp_velocity = self.velocity.copy()
+        _factor = c.TABLE_FRICTION_BALL_SPIN_RATIO * (_factor_weight ** 2)
+        _temp_velocity.scale_to(self.rotational_velocity.magnitude() * _factor ** dt + self.velocity.magnitude() * (1 - _factor** dt))
+
+        self.rotational_velocity = _temp_velocity
+        self.initial_position += (self.velocity-self.rotational_velocity) * dt
+        if(self.rotational_velocity.magnitude() < c.MIN_ROTATIONAL_VELOCITY):
+            self.rotational_velocity *=0
+
 
     def drag(self, dt):
         if(self.velocity.magnitude() > self.max_speed):
@@ -184,6 +200,7 @@ class Ball(PhysicsObject):
         # TODO iterate through other balls and call self.collide_with_other_ball if colliding
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
         pass
+
     def do_collision(self, mapTile):
         #return()
         #print("wall");
@@ -479,6 +496,7 @@ class Ball(PhysicsObject):
         if not self.outline_hidden:
             pygame.draw.circle(screen, c.BLACK, (x+self.radius, y+self.radius), self.radius, 2)
 
+
     def draw_shadow(self, screen, offset=(0, 0)):
         x, y = self.pose.get_position()
         x += offset[0] - self.radius
@@ -521,6 +539,7 @@ class Shelled(Ball):
     def update(self, dt, events):
         super().update(dt, events)
         self.inner_ball.pose = self.pose.copy()
+
 
     def draw(self, surf, offset=(0, 0)):
         self.inner_ball.draw(surf, offset=offset)
