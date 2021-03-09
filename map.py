@@ -2,7 +2,7 @@ import random
 
 import pygame
 
-from primitives import GameObject
+from primitives import GameObject, Pose
 import constants as c
 from pocket import Pocket
 
@@ -75,6 +75,12 @@ class Room(GameObject):
         path = f"rooms/room_{random.choice([0, 1, 2, 3])}.txt"
         self.pockets = []
         self.populate_from_path(path)
+
+        x = self.x * c.ROOM_WIDTH_TILES * c.TILE_SIZE
+        y = self.y * c.ROOM_HEIGHT_TILES * c.TILE_SIZE
+        w = c.ROOM_WIDTH_TILES * c.TILE_SIZE
+        h = c.ROOM_HEIGHT_TILES * c.TILE_SIZE
+        self.pose = Pose((x + w/2, y + h/2), 0)
 
     def add_tile_collisions(self):
         for tile in self.tile_iter():

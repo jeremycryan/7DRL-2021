@@ -3,6 +3,7 @@ from ball import Ball, Shelled
 from player import Player
 from map import Map
 from camera import Camera
+import pygame
 
 
 class LevelScene(Scene):
@@ -39,7 +40,8 @@ class LevelScene(Scene):
                 self.floor_particles.remove(particle)
         self.map.update(dt, events)
         self.camera.update(dt, events)
-        pass
+        self.camera.object_to_track = self.current_room()
+        print(pygame.mouse.get_pos())
 
     def draw(self, surface, offset=(0, 0)):
         surface.fill((30, 80, 30))
@@ -53,3 +55,6 @@ class LevelScene(Scene):
             ball.draw(surface, offset=offset)
         for particle in self.particles:
             particle.draw(surface, offset=offset)
+
+    def current_room(self):
+        return self.map.get_at_pixels(*self.player.pose.get_position())

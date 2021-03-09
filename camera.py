@@ -16,7 +16,8 @@ class Camera(GameObject):
 
     def update(self, dt, events):
         diff = self.object_to_track.pose - self.pose - self.mid_pose
-        self.pose += diff * dt * 5
+        if diff.magnitude() > 2:
+            self.pose += diff * dt * 5
         self.shake_amp *= 0.005**dt
         self.since_shake += dt
 

@@ -81,18 +81,19 @@ class Ball(PhysicsObject):
     def update(self, dt, events):
         if self.tractor_beam_target:
             diff = self.tractor_beam_target - self.pose
-            self.pose += diff*dt * 10
-        else:
-            super().update(dt, events)  # update position based on velocity, velocity based on acceleration
+            self.pose += diff*dt * 5
 
-        if self.tractor_beam_target and (self.tractor_beam_target - self.pose).magnitude() < 2:
-            if self.target_alpha < self.alpha:
-                self.alpha -= 250*dt
-            if self.target_scale < self.scale:
-                self.scale -= dt*1.2 - (self.target_scale - self.scale)*3*dt
-            if self.alpha == 0:
-                self.has_sunk()
-                return
+            if (self.tractor_beam_target - self.pose).magnitude() < 2:
+                if self.target_alpha < self.alpha:
+                    self.alpha -= 250*dt
+                if self.target_scale < self.scale:
+                    self.scale -= dt*1.2 - (self.target_scale - self.scale)*3*dt
+                if self.alpha == 0:
+                    self.has_sunk()
+                    return
+            return
+
+        super().update(dt, events)  # update position based on velocity, velocity based on acceleration
 
         self.drag(dt)
         self.since_smoke += dt
