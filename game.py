@@ -1,6 +1,7 @@
 import sys
 
 import pygame
+import random
 
 import constants as c
 from level_scene import LevelScene
@@ -18,8 +19,28 @@ class Game:
         pygame.display.set_caption(c.GAME_TITLE)
         self.clock = pygame.time.Clock()
 
+        self.load_sounds()
         self.current_scene = LevelScene(self)
         self.main()
+
+    def load_sounds(self):
+        self.ball_hit_1a = pygame.mixer.Sound(c.sound_path("balls hit 1(a).wav"))
+        self.ball_hit_1b = pygame.mixer.Sound(c.sound_path("balls hit 1(b).wav"))
+        self.ball_hit_1c = pygame.mixer.Sound(c.sound_path("balls hit 1(c).wav"))
+        self.ball_hit_2a = pygame.mixer.Sound(c.sound_path("balls hit 2(a).wav"))
+        self.ball_hit_2b = pygame.mixer.Sound(c.sound_path("balls hit 2(b).wav"))
+        self.ball_hit_2c = pygame.mixer.Sound(c.sound_path("balls hit 2(c).wav"))
+        self.ball_hit_3a = pygame.mixer.Sound(c.sound_path("balls hit 3(a).wav"))
+        self.ball_hit_3b = pygame.mixer.Sound(c.sound_path("balls hit 3(b).wav"))
+        self.ball_hit_3c = pygame.mixer.Sound(c.sound_path("balls hit 3(c).wav"))
+
+    def balls_hit(self, intensity):
+        if intensity == 1:
+            random.choice([self.ball_hit_3a, self.ball_hit_3b, self.ball_hit_3c]).play()
+        elif intensity == 2:
+            random.choice([self.ball_hit_1a, self.ball_hit_1b, self.ball_hit_1c]).play()
+        elif intensity == 3:
+            random.choice([self.ball_hit_2a, self.ball_hit_2b, self.ball_hit_2c]).play()
 
     def update_global(self):
         events = pygame.event.get()

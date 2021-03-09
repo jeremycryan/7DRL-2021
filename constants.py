@@ -61,3 +61,6 @@ def dprint(thing):
 
 def image_path(rel):
     return os.path.join("images", rel)
+
+def sound_path(rel):
+    return os.path.join("sounds", rel)

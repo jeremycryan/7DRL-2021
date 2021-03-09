@@ -289,6 +289,10 @@ class Ball(PhysicsObject):
         if(relative_velocity.magnitude() == 0):
             return
 
+        intensity = int(relative_velocity.magnitude()/200) + 1
+        intensity = min(intensity, 3)
+        self.game.balls_hit(intensity)
+
         spark_pose = self.pose - (self.pose - other.pose) * .5
         intensity = min(relative_velocity.magnitude()**1.5/3000, 1)
         self.small_spark_explosion((spark_pose.x, spark_pose.y), intensity=relative_velocity.magnitude()**1.5/3000)

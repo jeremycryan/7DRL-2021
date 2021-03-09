@@ -196,12 +196,6 @@ class Tile(GameObject):
 
         if key in [c.EMPTY, c.POCKET, c.LEFT_WALL, c.RIGHT_WALL, c.DOWN_WALL, c.UP_WALL]:
             self.collidable = False
-            if key == c.EMPTY or key==c.POCKET:
-                self.surface.fill((30, 80, 30))
-            elif key == c.POCKET:
-                self.surface.fill(c.MAGENTA)
-        else:
-            self.surface.fill(c.BLACK)
 
         self.x = x
         self.y = y
@@ -216,14 +210,14 @@ class Tile(GameObject):
     def doors_open(self):
         pass
 
-    def draw(self, surface, offset=(0, 0)):
-        x = self.x * c.TILE_SIZE + offset[0]
-        y = self.y * c.TILE_SIZE + offset[1]
-        if x < -c.TILE_SIZE or x > c.WINDOW_WIDTH or y < -c.TILE_SIZE or y > c.WINDOW_HEIGHT:
-            return
-
-        radius = c.TILE_SIZE
+    def generate_surface(self):
+        self.surface = pygame.Surface((c.TILE_SIZE, c.TILE_SIZE))
+        if self.key in [c.EMPTY, c.POCKET, c.LEFT_WALL, c.RIGHT_WALL, c.DOWN_WALL, c.UP_WALL]:
+            self.surface.fill((30, 80, 30))
+        else:
+            self.surface.fill(c.BLACK)
         green = (30, 80, 30)
+        radius = c.TILE_SIZE
         if self.bottom_right_corner:
             self.surface.fill(green)
             pygame.draw.circle(self.surface, c.BLACK, (0, 0), radius)
@@ -236,6 +230,14 @@ class Tile(GameObject):
         elif self.top_right_corner:
             self.surface.fill(green)
             pygame.draw.circle(self.surface, c.BLACK, (0, radius), radius)
+
+    def draw(self, surface, offset=(0, 0)):
+        x = self.x * c.TILE_SIZE + offset[0]
+        y = self.y * c.TILE_SIZE + offset[1]
+        if x < -c.TILE_SIZE or x > c.WINDOW_WIDTH or y < -c.TILE_SIZE or y > c.WINDOW_HEIGHT:
+            return
+
+        self.generate_surface()
 
         surface.blit(self.surface, (x, y))
 
