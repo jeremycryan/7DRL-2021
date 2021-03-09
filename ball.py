@@ -327,10 +327,10 @@ class Ball(PhysicsObject):
 
         print(energyRatio)
 
-        if energyRatio<0.01:
-            energyRatio = 0.01
-        if energyRatio>.99:
-            energyRatio = .99
+        if energyRatio<0.2:
+            energyRatio = 0.2
+        if energyRatio>.8:
+            energyRatio = .8
 
 
         #self_relative_momentum = energyRatio*momemtum
