@@ -19,6 +19,8 @@ class Camera(GameObject):
         if diff.magnitude() > 2:
             self.pose += diff * dt * 5
         self.shake_amp *= 0.005**dt
+        if self.shake_amp < 1:
+            self.shake_amp = 0
         self.since_shake += dt
 
     def shake(self, amt, pose=None):

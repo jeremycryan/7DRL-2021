@@ -27,6 +27,13 @@ class Player(Ball):
 
         super().update(dt, events)
 
+        current_room = self.game.current_scene.current_room()
+        if self.is_completely_in_room() and not current_room.enemies_have_spawned:
+            current_room.doors_close()
+            current_room.spawn_enemies()
+        elif current_room.enemies_have_spawned and not current_room.doors_are_open and self.game.current_scene.no_enemies():
+            current_room.doors_open()
+
     def take_turn(self):
         pass
 

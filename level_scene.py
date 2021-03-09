@@ -10,17 +10,17 @@ class LevelScene(Scene):
     def __init__(self, game):
         super().__init__(game)
         self.player = Player(game, 200, 500)
-        self.camera = Camera(game, self.player)
         self.balls = [self.player,
-                      Ball(self.game, 300, 250),
-                      Ball(self.game, 400, 200, 50),
-                      Ball(self.game, 550, 150),
-                      Shelled(self.game, Ball(self.game), x=500, y=500)]
+                      Ball(self.game, 300, 250)]
+                      # Ball(self.game, 400, 200, 50),
+                      # Ball(self.game, 550, 150),
+                      # Shelled(self.game, Ball(self.game), x=500, y=500)]
         self.current_ball = self.player
         self.current_ball.turn_in_progress = True
         self.map = Map(self.game)
         self.particles = []
         self.floor_particles = []
+        self.camera = Camera(game, self.current_room())
 
     def shake(self, amt, pose=None):
         self.camera.shake(amt, pose)
@@ -30,6 +30,12 @@ class LevelScene(Scene):
             index = (self.balls.index(self.current_ball) + 1) % len(self.balls)
             self.current_ball = self.balls[index]
             self.current_ball.start_turn()
+
+    def no_enemies(self):
+        for ball in self.balls:
+            if ball is not self.player:
+                return False
+        return True
 
     def all_balls_below_speed(self, speed=5):
         for ball in self.balls:
@@ -59,7 +65,6 @@ class LevelScene(Scene):
         self.map.update(dt, events)
         self.camera.update(dt, events)
         self.camera.object_to_track = self.current_room()
-        print(pygame.mouse.get_pos())
 
     def draw(self, surface, offset=(0, 0)):
         surface.fill((30, 80, 30))

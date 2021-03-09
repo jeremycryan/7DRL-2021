@@ -48,7 +48,7 @@ class Ball(PhysicsObject):
         self.take_turn()
 
     def take_turn(self):
-        self.knock(BasicCue(), random.random()*360, random.random()*100)
+        self.knock(BasicCue(), random.random()*360, random.random()*20)
         self.turn_phase = c.AFTER_HIT
 
     def process_back_surface(self):
@@ -61,6 +61,12 @@ class Ball(PhysicsObject):
                 x0 = x*noise.get_width()
                 y0 = y*noise.get_height()
                 self.back_surface.blit(noise, (x0, y0), special_flags=pygame.BLEND_MULT)
+
+    def is_completely_in_room(self):
+        for tile in self.game.current_scene.map.tiles_near(self.pose, self.radius):
+            if tile.key not in [c.EMPTY, c.POCKET]:
+                return False
+        return True
 
     def generate_overlay(self):
         self.overlay = pygame.Surface((2*self.radius, 2*self.radius))
@@ -282,7 +288,6 @@ class Ball(PhysicsObject):
         #    return()
 
         self.collide_with_wall_corner(self.map_coordinate_to_pose(mapTile), mapTile)
-        print("wall_corner");
 
         return ()
 
@@ -293,7 +298,6 @@ class Ball(PhysicsObject):
 
 
         # Offset balls
-        print(self.color)
         collision_normal = self.pose - other.pose
         offset_required = (collision_normal.magnitude() - (self.radius + other.radius) ) / 1.95
         collision_normal.scale_to(1)

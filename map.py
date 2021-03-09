@@ -81,6 +81,8 @@ class Room(GameObject):
         w = c.ROOM_WIDTH_TILES * c.TILE_SIZE
         h = c.ROOM_HEIGHT_TILES * c.TILE_SIZE
         self.pose = Pose((x + w/2, y + h/2), 0)
+        self.enemies_have_spawned = False
+        self.doors_are_open = True
 
     def add_tile_collisions(self):
         for tile in self.tile_iter():
@@ -95,6 +97,10 @@ class Room(GameObject):
             tile.right_bumper = True
             tile.down_bumper = True
             tile.up_bumper = True
+            tile.top_right_corner = False
+            tile.top_left_corner = False
+            tile.bottom_right_corner = False
+            tile.bottom_left_corner = False
 
             if x==0 or self.tiles[y][x-1].collidable:
                 tile.left_bumper = False
@@ -167,6 +173,25 @@ class Room(GameObject):
             for tile in row:
                 yield tile
 
+    def doors_close(self):
+        for tile in self.tile_iter():
+            tile.doors_close()
+        self.add_tile_collisions()
+        for tile in self.tile_iter():
+            tile.generate_surface()
+        self.doors_are_open = False
+
+    def doors_open(self):
+        for tile in self.tile_iter():
+            tile.doors_open()
+        self.add_tile_collisions()
+        for tile in self.tile_iter():
+            tile.generate_surface()
+        self.doors_are_open = True
+
+    def spawn_enemies(self):
+        self.enemies_have_spawned = True
+
 
 class Tile(GameObject):
     def __init__(self, game, key, x, y,
@@ -208,11 +233,12 @@ class Tile(GameObject):
             self.collidable = True
 
     def doors_open(self):
-        pass
+        if self.key in [c.UP_WALL, c.DOWN_WALL, c.LEFT_WALL, c.RIGHT_WALL]:
+            self.collidable = False
 
     def generate_surface(self):
         self.surface = pygame.Surface((c.TILE_SIZE, c.TILE_SIZE))
-        if self.key in [c.EMPTY, c.POCKET, c.LEFT_WALL, c.RIGHT_WALL, c.DOWN_WALL, c.UP_WALL]:
+        if self.key in [c.EMPTY, c.POCKET, c.LEFT_WALL, c.RIGHT_WALL, c.DOWN_WALL, c.UP_WALL] and self.collidable == False:
             self.surface.fill((30, 80, 30))
         else:
             self.surface.fill(c.BLACK)
