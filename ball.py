@@ -30,6 +30,14 @@ class Ball(PhysicsObject):
         self.outline_hidden = False
         self.rotational_velocity = Pose((0, 0), 0)
         self.since_smoke = 0
+        self.can_collide = True
+        self.tractor_beam_target = None
+        self.can_be_sunk = True
+        self.target_alpha = 255
+        self.target_scale = 1
+        self.alpha = 255
+        self.scale = 1
+        self.sunk = False
 
     def process_back_surface(self):
         self.back_surface = pygame.transform.scale(self.back_surface, (self.radius*4, self.radius*4)).convert()
@@ -71,7 +79,20 @@ class Ball(PhysicsObject):
         self.back_surface = pygame.image.load(c.image_path(f"{random.choice([1, 2, 3, 4, 5, 6, 7, 8])}_ball.png"))
 
     def update(self, dt, events):
-        super().update(dt, events)  # update position based on velocity, velocity based on acceleration
+        if self.tractor_beam_target:
+            diff = self.tractor_beam_target - self.pose
+            self.pose += diff*dt * 10
+        else:
+            super().update(dt, events)  # update position based on velocity, velocity based on acceleration
+
+        if self.tractor_beam_target and (self.tractor_beam_target - self.pose).magnitude() < 2:
+            if self.target_alpha < self.alpha:
+                self.alpha -= 250*dt
+            if self.target_scale < self.scale:
+                self.scale -= dt*1.2 - (self.target_scale - self.scale)*3*dt
+            if self.alpha == 0:
+                self.has_sunk()
+                return
 
         self.drag(dt)
         self.since_smoke += dt
@@ -80,7 +101,7 @@ class Ball(PhysicsObject):
             min_vel = 350
             max_vel = 500
             mag = self.velocity.magnitude()
-            if mag > min_vel:
+            if mag > min_vel and not self.tractor_beam_target:
                 num = min((mag - min_vel)/(max_vel - min_vel), 1) * 5
                 self.make_smoke((self.pose.x, self.pose.y), int(num))
             self.since_smoke -= period
@@ -123,13 +144,22 @@ class Ball(PhysicsObject):
             self.velocity *= 0;
 
     def update_collisions(self):
+        if not self.can_collide:
+            return
 
         balls = self.game.current_scene.balls;
         mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1.25);
 
+        for pocket in self.game.current_scene.map.pockets_iter():
+            if pocket.can_swallow(self) and self.can_be_sunk:
+                pocket.swallow(self)
+                return
+
         #check for collisions
         for ball in balls:
             if ball is self:
+                continue
+            if not ball.can_collide:
                 continue
             if self._did_collide:
                 return
@@ -488,20 +518,25 @@ class Ball(PhysicsObject):
             self.surf.blit(self.back_surface, (x0, y0))
 
         self.surf.blit(self.overlay, (0, 0))
-        x -= self.radius
-        y -= self.radius
-        screen.blit(self.surf, (x, y))
-        screen.blit(self.shading, (x, y), special_flags=pygame.BLEND_MULT)
+        x -= self.radius * self.scale
+        y -= self.radius * self.scale
+        surf = self.surf.copy()
+        surf.blit(self.shading, (0, 0), special_flags=pygame.BLEND_MULT)
+        surf = pygame.transform.scale(surf, (int(self.radius * self.scale * 2), int(self.radius * self.scale * 2)))
+        surf.set_colorkey(surf.get_at((0, 0)))
+        surf.set_alpha(self.alpha)
+        screen.blit(surf, (x, y))
 
-        if not self.outline_hidden:
-            pygame.draw.circle(screen, c.BLACK, (x+self.radius, y+self.radius), self.radius, 2)
+        if not self.outline_hidden and self.alpha > 128:
+            pygame.draw.circle(screen, c.BLACK, (x+self.radius*self.scale, y+self.radius*self.scale), self.radius*self.scale, int(2*self.alpha/255))
 
 
     def draw_shadow(self, screen, offset=(0, 0)):
         x, y = self.pose.get_position()
-        x += offset[0] - self.radius
-        y += offset[1] - self.radius + self.radius//2
-        screen.blit(self.shadow, (x, y))
+        x += offset[0] - self.radius*self.scale
+        y += offset[1] - self.radius*self.scale + self.radius//2
+        self.shadow.set_alpha(50 * self.alpha/255)
+        screen.blit(pygame.transform.scale(self.shadow, (int(self.radius*self.scale*2), int(self.radius*self.scale*2))), (x, y))
 
     def small_spark_explosion(self, position, intensity=1):
         # intensity is scaled to range 0.1-1
@@ -515,6 +550,18 @@ class Ball(PhysicsObject):
             smoke = SmokeBit(self.game, *position)
             smoke.radius *= self.radius/60
             self.game.current_scene.floor_particles.append(smoke)
+
+    def sink(self, pocket_pose):
+        if not self.can_be_sunk:
+            return
+        self.tractor_beam_target = pocket_pose
+        self.can_collide = False
+        self.target_alpha = 0
+        self.target_scale = 0.5
+
+    def has_sunk(self):
+        self.sunk = True
+        #TODO add a neat particle effect
 
 
 class Shelled(Ball):
@@ -535,6 +582,7 @@ class Shelled(Ball):
         self.twinkle_surf.set_alpha(100)
         self.twinkle_surf.set_colorkey(c.BLACK)
         self.broken = False
+        self.can_be_sunk = False
 
     def update(self, dt, events):
         super().update(dt, events)
