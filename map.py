@@ -221,7 +221,24 @@ class Tile(GameObject):
         y = self.y * c.TILE_SIZE + offset[1]
         if x < -c.TILE_SIZE or x > c.WINDOW_WIDTH or y < -c.TILE_SIZE or y > c.WINDOW_HEIGHT:
             return
+
+        radius = c.TILE_SIZE
+        green = (30, 80, 30)
+        if self.bottom_right_corner:
+            self.surface.fill(green)
+            pygame.draw.circle(self.surface, c.BLACK, (0, 0), radius)
+        elif self.bottom_left_corner:
+            self.surface.fill(green)
+            pygame.draw.circle(self.surface, c.BLACK, (radius, 0), radius)
+        elif self.top_left_corner:
+            self.surface.fill(green)
+            pygame.draw.circle(self.surface, c.BLACK, (radius, radius), radius)
+        elif self.top_right_corner:
+            self.surface.fill(green)
+            pygame.draw.circle(self.surface, c.BLACK, (0, radius), radius)
+
         surface.blit(self.surface, (x, y))
+
 
         if c.DEBUG:
             bit = pygame.Surface((10, 10))
