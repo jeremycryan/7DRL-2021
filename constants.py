@@ -44,7 +44,7 @@ DOWN_WALL = "D"
 LEFT_WALL = "L"
 RIGHT_WALL = "R"
 
-ROOMS = [4]
+ROOMS = [5]
 
 FULLSCREEN = False
 
