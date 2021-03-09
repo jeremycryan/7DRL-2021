@@ -4,6 +4,7 @@ import pygame
 
 from primitives import GameObject
 import constants as c
+from pocket import Pocket
 
 
 class Map(GameObject):
@@ -54,6 +55,11 @@ class Map(GameObject):
                     continue
                 yield tile
 
+    def pockets_iter(self):
+        for room in self.room_iter():
+            for pocket in room.pockets:
+                yield pocket
+
 
 class Room(GameObject):
     def __init__(self, game, x, y):
@@ -67,6 +73,7 @@ class Room(GameObject):
         self.game = game
         self.openings = []
         path = f"rooms/room_{random.choice([0, 1, 2, 3])}.txt"
+        self.pockets = []
         self.populate_from_path(path)
 
     def add_tile_collisions(self):
@@ -111,6 +118,7 @@ class Room(GameObject):
 
 
     def populate_from_path(self, path):
+        self.pockets = []
         with open(path) as f:
             lines = f.readlines()
         self.openings = [char for char in lines[0].strip()]
@@ -118,6 +126,8 @@ class Room(GameObject):
             row = row.strip()
             for x, character in enumerate(row):
                 self.tiles[y][x] = Tile(self.game, character, self.x * c.ROOM_WIDTH_TILES + x, self.y * c.ROOM_HEIGHT_TILES + y)
+                if character == c.POCKET:
+                    self.pockets.append(Pocket(self.game, self.tiles[y][x]))
         self.add_tile_collisions()
 
     def get_at(self, x, y):
@@ -127,11 +137,12 @@ class Room(GameObject):
         return self.get_at(x/c.TILE_SIZE, y/c.TILE_SIZE)
 
     def update(self, dt, events):
+        for pocket in self.pockets:
+            pocket.update(dt, events)
         for tile in self.tile_iter():
             tile.update(dt, events)
 
     def draw(self, surface, offset=(0, 0)):
-        camera = self.game.current_scene.camera
         if offset[0] + self.x*c.ROOM_WIDTH_TILES*c.TILE_SIZE < -c.WINDOW_WIDTH - c.TILE_SIZE or \
             offset[1] + self.y*c.ROOM_HEIGHT_TILES*c.TILE_SIZE < -c.WINDOW_HEIGHT - c.TILE_SIZE or \
             offset[0] + self.x*c.ROOM_WIDTH_TILES*c.TILE_SIZE > c.WINDOW_WIDTH or \
@@ -139,6 +150,11 @@ class Room(GameObject):
             return
         for tile in self.tile_iter():
             tile.draw(surface, offset=offset)
+        for pocket in self.pockets:
+            if pocket.pose.x + offset[0] < -pocket.radius or pocket.pose.x + offset[0] > c.WINDOW_WIDTH + pocket.radius or \
+                pocket.pose.y + offset[1] < -pocket.radius or pocket.pose.y + offset[1] > c.WINDOW_HEIGHT + pocket.radius:
+                    continue
+            pocket.draw(surface, offset=offset)
 
     def tile_iter(self):
         for row in self.tiles:
@@ -174,7 +190,7 @@ class Tile(GameObject):
 
         if key in [c.EMPTY, c.POCKET]:
             self.collidable = False
-            if key == c.EMPTY:
+            if key == c.EMPTY or key==c.POCKET:
                 self.surface.fill((30, 80, 30))
             elif key == c.POCKET:
                 self.surface.fill(c.MAGENTA)
