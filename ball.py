@@ -189,16 +189,22 @@ class Ball(PhysicsObject):
         #print("wall");
         self.game.current_scene.camera.shake(8 * self.velocity.magnitude()/500, pose=self.velocity)
 
+        #shift pose away from wall
         #relative_position = self.pose - self.map_coordinate_to_pose(mapTile)
 
         if mapTile.down_bumper :#and relative_position.y - self.radius - c.COLLIDER_SIZE >0 :
             self.velocity.y = abs(self.velocity.y)
+            self.pose.y = (self.map_coordinate_to_pose(mapTile).y + c.TILE_SIZE/2) + self.radius
         elif mapTile.up_bumper :#and relative_position.y + self.radius + c.COLLIDER_SIZE <0:
             self.velocity.y = abs(self.velocity.y) * -1
+            self.pose.y = (self.map_coordinate_to_pose(mapTile).y - c.TILE_SIZE/2) - self.radius
         elif mapTile.left_bumper :#and relative_position.x + self.radius + c.COLLIDER_SIZE <0:
             self.velocity.x = abs(self.velocity.x) * -1
+            self.pose.x = (self.map_coordinate_to_pose(mapTile).x - c.TILE_SIZE/2) - self.radius
         elif mapTile.right_bumper :#and relative_position.x - self.radius - c.COLLIDER_SIZE >0:
             self.velocity.x = abs(self.velocity.x)
+            self.pose.x = (self.map_coordinate_to_pose(mapTile).x + c.TILE_SIZE/2) + self.radius
+
 
         if(self.velocity.magnitude() < c.MIN_WALL_BOUNCE_SPEED):
             self.velocity.scale_to(c.MIN_WALL_BOUNCE_SPEED)
