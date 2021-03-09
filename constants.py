@@ -55,6 +55,9 @@ RIGHT = 2
 DOWN = 3
 LEFT = 4
 
+BEFORE_HIT = 0
+AFTER_HIT = 1
+
 def dprint(thing):
     if DEBUG:
         print(thing)

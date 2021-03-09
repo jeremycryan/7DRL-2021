@@ -16,6 +16,8 @@ class LevelScene(Scene):
                       Ball(self.game, 400, 200, 50),
                       Ball(self.game, 550, 150),
                       Shelled(self.game, Ball(self.game), x=500, y=500)]
+        self.current_ball = self.player
+        self.current_ball.turn_in_progress = True
         self.map = Map(self.game)
         self.particles = []
         self.floor_particles = []
@@ -23,11 +25,27 @@ class LevelScene(Scene):
     def shake(self, amt, pose=None):
         self.camera.shake(amt, pose)
 
+    def update_current_ball(self):
+        if not self.current_ball.turn_in_progress:
+            index = (self.balls.index(self.current_ball) + 1) % len(self.balls)
+            self.current_ball = self.balls[index]
+            self.current_ball.start_turn()
+
+    def all_balls_below_speed(self, speed=5):
+        for ball in self.balls:
+            if ball.velocity.magnitude() > speed:
+                return False
+        return True
+
     def update(self, dt, events):
         for ball in self.balls:
             ball._did_collide = False;
         for ball in self.balls:
             ball.update(dt, events)
+        self.update_current_ball()
+        for ball in self.balls[:]:
+            if ball.has_sunk():
+                self.balls.remove(ball)
         for particle in self.particles:
             particle.update(dt, events)
         for particle in self.particles[:]:

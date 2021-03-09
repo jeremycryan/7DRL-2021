@@ -27,9 +27,18 @@ class Player(Ball):
 
         super().update(dt, events)
 
+    def take_turn(self):
+        pass
+
     def cue_hit(self, hit_vector):
         # TODO use self.knock, and account for cue type
         # self.velocity = hit_vector.copy()
+
+        if self.turn_phase != c.BEFORE_HIT or not self.turn_in_progress:
+            return
+        elif self.turn_in_progress:
+            self.turn_phase = c.AFTER_HIT
+
         angle = math.atan2(-hit_vector.y, hit_vector.x) * 180/math.pi
         power = hit_vector.magnitude()/5
         if power > 100:

@@ -5,6 +5,7 @@ from primitives import PhysicsObject, Pose
 import constants as c
 from particle import Spark, SmokeBit
 import random
+from cue import BasicCue
 import time
 
 
@@ -38,6 +39,17 @@ class Ball(PhysicsObject):
         self.alpha = 255
         self.scale = 1
         self.sunk = False
+        self.turn_in_progress = False
+        self.turn_phase = c.BEFORE_HIT
+
+    def start_turn(self):
+        self.turn_in_progress = True
+        self.turn_phase = c.BEFORE_HIT
+        self.take_turn()
+
+    def take_turn(self):
+        self.knock(BasicCue(), random.random()*360, random.random()*100)
+        self.turn_phase = c.AFTER_HIT
 
     def process_back_surface(self):
         self.back_surface = pygame.transform.scale(self.back_surface, (self.radius*4, self.radius*4)).convert()
@@ -79,6 +91,10 @@ class Ball(PhysicsObject):
         self.back_surface = pygame.image.load(c.image_path(f"{random.choice([1, 2, 3, 4, 5, 6, 7, 8])}_ball.png"))
 
     def update(self, dt, events):
+        if self.game.current_scene.all_balls_below_speed() and self.turn_in_progress and self.turn_phase == c.AFTER_HIT:
+            self.turn_in_progress = False
+            self.turn_phase = c.BEFORE_HIT
+
         if self.tractor_beam_target:
             diff = self.tractor_beam_target - self.pose
             self.pose += diff*dt * 5
@@ -88,8 +104,8 @@ class Ball(PhysicsObject):
                     self.alpha -= 250*dt
                 if self.target_scale < self.scale:
                     self.scale -= dt*1.2 - (self.target_scale - self.scale)*3*dt
-                if self.alpha == 0:
-                    self.has_sunk()
+                if self.alpha < 1:
+                    self.sink_for_real()
                     return
             return
 
@@ -532,8 +548,11 @@ class Ball(PhysicsObject):
         surf.set_alpha(self.alpha)
         screen.blit(surf, (x, y))
 
+        color = c.BLACK
+        if self.turn_in_progress:
+            color = c.WHITE
         if not self.outline_hidden and self.alpha > 128:
-            pygame.draw.circle(screen, c.BLACK, (x+self.radius*self.scale, y+self.radius*self.scale), self.radius*self.scale, int(2*self.alpha/255))
+            pygame.draw.circle(screen, color, (x+self.radius*self.scale, y+self.radius*self.scale), self.radius*self.scale, int(2*self.alpha/255))
 
 
     def draw_shadow(self, screen, offset=(0, 0)):
@@ -564,9 +583,13 @@ class Ball(PhysicsObject):
         self.target_alpha = 0
         self.target_scale = 0.5
 
-    def has_sunk(self):
+    def sink_for_real(self):
         self.sunk = True
+        self.turn_in_progress = False
         #TODO add a neat particle effect
+
+    def has_sunk(self):
+        return self.sunk
 
 
 class Shelled(Ball):
@@ -599,8 +622,11 @@ class Shelled(Ball):
         x = self.pose.x + offset[0] - self.shell_surf.get_width()//2
         y = self.pose.y + offset[1] - self.shell_surf.get_height()//2
         surf.blit(self.shell_surf, (x, y))
+        color = c.BLACK
+        if self.turn_in_progress:
+            color = c.WHITE
         if not self.outline_hidden:
-            pygame.draw.circle(surf, c.BLACK, (x+self.radius, y+self.radius), self.radius, 2)
+            pygame.draw.circle(surf, color, (x+self.radius, y+self.radius), self.radius, 2)
 
         diff = self.pose - self.initial_position
         tx = 1 * math.sin(diff.x/7)
