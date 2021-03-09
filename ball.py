@@ -26,6 +26,7 @@ class Ball(PhysicsObject):
         self.drag_constant = drag_constant
         self.max_speed = max_speed
         self._did_collide = False
+        self._did_collide_wall = False
         self.outline_hidden = False
         self.since_smoke = 0
 
@@ -140,24 +141,28 @@ class Ball(PhysicsObject):
                     temp_pose.x += c.TILE_SIZE/2
                     temp_pose.y += c.TILE_SIZE/2
                     if(temp_pose.magnitude()< c.TILE_SIZE + self.radius):
+                        self._did_collide_wall = True;
                         self.collide_with_wall_corner_2(temp_pose, mapTile)
                 elif(mapTile.top_right_corner):
                     temp_pose = relative_pose.copy()
                     temp_pose.x -= c.TILE_SIZE / 2
                     temp_pose.y += c.TILE_SIZE / 2
                     if (temp_pose.magnitude() < c.TILE_SIZE + self.radius):
+                        self._did_collide_wall = True;
                         self.collide_with_wall_corner_2(temp_pose, mapTile)
                 elif(mapTile.bottom_left_corner):
                     temp_pose = relative_pose.copy()
                     temp_pose.x += c.TILE_SIZE / 2
                     temp_pose.y -= c.TILE_SIZE / 2
                     if (temp_pose.magnitude() < c.TILE_SIZE + self.radius):
+                        self._did_collide_wall = True;
                         self.collide_with_wall_corner_2(temp_pose, mapTile)
                 elif(mapTile.bottom_right_corner):
                     temp_pose = relative_pose.copy()
                     temp_pose.x -= c.TILE_SIZE / 2
                     temp_pose.y -= c.TILE_SIZE / 2
                     if (temp_pose.magnitude() < c.TILE_SIZE + self.radius):
+                        self._did_collide_wall = True;
                         self.collide_with_wall_corner_2(temp_pose, mapTile)
 
         mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1.25);
@@ -167,7 +172,14 @@ class Ball(PhysicsObject):
             relative_pose = (self.map_coordinate_to_pose(mapTile) - self.pose)
 
             if mapTile.collidable and (abs(relative_pose.x) < c.TILE_SIZE / 2 + self.radius and abs(relative_pose.y) < c.TILE_SIZE / 2 + self.radius):
+                self._did_collide_wall = True;
                 self.do_collision(mapTile)
+
+        if (self._did_collide_wall):
+            self._did_collide_wall = False
+            if (self.velocity.magnitude() > c.MIN_BOUNCE_REDUCTION_SPEED or c.WALL_BOUNCE_FACTOR):
+                self.velocity.scale_to(self.velocity.magnitude() * c.WALL_BOUNCE_FACTOR)
+            self.game.current_scene.camera.shake(8 * self.velocity.magnitude() / 500, pose=self.velocity)
 
         # TODO iterate through other balls and call self.collide_with_other_ball if colliding
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
@@ -183,7 +195,6 @@ class Ball(PhysicsObject):
             self.velocity.y = abs(self.velocity.y)
         elif mapTile.up_bumper :#and relative_position.y + self.radius + c.COLLIDER_SIZE <0:
             self.velocity.y = abs(self.velocity.y) * -1
-            print("up bumper")
         elif mapTile.left_bumper :#and relative_position.x + self.radius + c.COLLIDER_SIZE <0:
             self.velocity.x = abs(self.velocity.x) * -1
         elif mapTile.right_bumper :#and relative_position.x - self.radius - c.COLLIDER_SIZE >0:
@@ -288,7 +299,6 @@ class Ball(PhysicsObject):
     def collide_with_wall_corner_2(self, relative_pose, wall_tile):
 
         print("Wall_corner")
-        self.game.current_scene.camera.shake(8 * self.velocity.magnitude()/500, pose=self.velocity)
 
         center_ball_2_center_wall = relative_pose.copy()
         # Offset balls
@@ -306,8 +316,7 @@ class Ball(PhysicsObject):
 
         if (self.velocity.magnitude() < c.MIN_WALL_BOUNCE_SPEED):
             self.velocity.scale_to(c.MIN_WALL_BOUNCE_SPEED)
-        if (self.velocity.magnitude() > c.MIN_BOUNCE_REDUCTION_SPEED or wall_tile.bounce_factor > 1):
-            self.velocity.scale_to(self.velocity.magnitude() * wall_tile.bounce_factor)
+
         pass
 
     def collide_with_other_ball_3(self, other):
