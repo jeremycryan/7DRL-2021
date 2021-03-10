@@ -471,7 +471,7 @@ class Ball(PhysicsObject):
 
     def collide_with_wall_corner_2(self, relative_pose, wall_tile):
 
-        print("Wall_corner")
+        #print("Wall_corner")
 
         center_ball_2_center_wall = relative_pose.copy()
         # Offset balls

@@ -73,7 +73,15 @@ class Player(Ball):
         for i in range(c.SIM_ITERATIONS):
 
             if(c.VARIABLE_SIM_SPEED):
-                if player_copy.velocity.magnitude() > 3:
+                mapTiles = self.game.current_scene.map.tiles_near(player_copy.pose, player_copy.radius + c.SIM_MOVEMENT);
+                near_wall = False
+                for mapTile in mapTiles:
+                    if(mapTile.collidable):
+                        near_wall = True
+                        break
+                if near_wall and player_copy.velocity.magnitude() >3:
+                    sim_update = (c.SIM_MOVEMENT / player_copy.velocity.magnitude() / c.SIM_NEAR_WALL_STEP_REDUCTION)
+                elif player_copy.velocity.magnitude() > 3:
                    sim_update = (c.SIM_MOVEMENT/player_copy.velocity.magnitude())
                 else:
                     sim_update = 1 / c.SIM_MIN_FPS
