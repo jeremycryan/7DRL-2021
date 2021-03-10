@@ -265,7 +265,7 @@ class Ball(PhysicsObject):
             return
 
         balls = self.game.current_scene.balls;
-        mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1.25);
+        mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1);
 
         for pocket in self.game.current_scene.map.pockets_iter():
             if pocket.can_swallow(self) and self.can_be_sunk:
@@ -330,7 +330,7 @@ class Ball(PhysicsObject):
                         self._did_collide_wall = True;
                         self.collide_with_wall_corner_2(temp_pose, mapTile)
 
-        mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1.25);
+        mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1);
         for mapTile in mapTiles:  # CORNERS FIRST
             if (mapTile.top_right_corner or mapTile.top_left_corner or mapTile.bottom_right_corner or mapTile.bottom_left_corner):
                 continue

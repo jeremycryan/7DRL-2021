@@ -70,19 +70,29 @@ class Player(Ball):
 
         traveled = 0
         positions = []
-        for i in range(50):
-            player_copy.update(1/c.SIM_FPS, [])
+        for i in range(c.SIM_ITERATIONS):
+
+            if(c.VARIABLE_SIM_SPEED):
+                if player_copy.velocity.magnitude() > 3:
+                   sim_update = (c.SIM_MOVEMENT/player_copy.velocity.magnitude())
+                else:
+                    sim_update = 1 / c.SIM_MIN_FPS
+                #mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius + );
+            else:
+                sim_update = 1 / c.SIM_FPS
+
+            player_copy.update(sim_update, [])
             positions.append(player_copy.pose.copy())
             if player_copy.has_collided:
                 break
 
         surf = pygame.Surface((self.radius*2, self.radius*2))
         surf.fill(c.BLACK)
-        pygame.draw.circle(surf, c.WHITE, (self.radius, self.radius), 5)
+        pygame.draw.circle(surf, c.WHITE, (self.radius, self.radius), 2)
         alpha = 255
         surf.set_colorkey(c.BLACK)
         for pose in positions[::1]:
-            alpha -= 5
+            alpha -= 250/c.SIM_ITERATIONS
             surf.set_alpha(alpha)
             screen.blit(surf, (pose.x + offset[0] - self.radius, pose.y + offset[1] - self.radius))
 
