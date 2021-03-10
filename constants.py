@@ -58,6 +58,8 @@ LEFT = 4
 BEFORE_HIT = 0
 AFTER_HIT = 1
 
+SIM_FPS = 100
+
 def dprint(thing):
     if DEBUG:
         print(thing)

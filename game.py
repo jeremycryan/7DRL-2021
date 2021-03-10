@@ -19,6 +19,8 @@ class Game:
         pygame.display.set_caption(c.GAME_TITLE)
         self.clock = pygame.time.Clock()
 
+        self.in_simulation = False
+
         self.load_sounds()
         self.current_scene = LevelScene(self)
         self.main()

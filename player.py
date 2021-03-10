@@ -7,12 +7,17 @@ from primitives import Pose
 from cue import Cue, BasicCue
 import constants as c
 
+from copy import copy
+
 
 class Player(Ball):
     def __init__(self, game, x=0, y=0):
         super().__init__(game, x, y)
         self.color = (255, 255, 0)
         self.active_cue = BasicCue()
+        self.is_player = True
+        self.has_collided = False
+        self.collided_with = None
 
     def load_back_surface(self):
         self.back_surface = pygame.image.load(c.image_path("player_back.png"))
@@ -52,3 +57,44 @@ class Player(Ball):
             power = 100
         self.velocity *= 0
         self.knock(self.active_cue, angle, power)
+
+    def draw_prediction_line(self, screen, offset=(0, 0)):
+        self.game.in_simulation = True
+        player_copy = copy(self)
+        player_copy.pose = self.pose.copy()
+        player_copy.velocity = self.velocity.copy()
+        player_copy.collide_with_other_ball_2 = player_copy.mock_collision
+        mouse_pose = Pose(pygame.mouse.get_pos(), 0) + self.game.current_scene.camera.pose
+        my_pose = self.pose.copy()
+        player_copy.cue_hit(mouse_pose - my_pose)
+
+        traveled = 0
+        positions = []
+        for i in range(50):
+            player_copy.update(1/c.SIM_FPS, [])
+            positions.append(player_copy.pose.copy())
+            if player_copy.has_collided:
+                break
+
+        surf = pygame.Surface((self.radius*2, self.radius*2))
+        surf.fill(c.BLACK)
+        pygame.draw.circle(surf, c.WHITE, (self.radius, self.radius), 5)
+        alpha = 255
+        surf.set_colorkey(c.BLACK)
+        for pose in positions[::1]:
+            alpha -= 5
+            surf.set_alpha(alpha)
+            screen.blit(surf, (pose.x + offset[0] - self.radius, pose.y + offset[1] - self.radius))
+
+        self.game.in_simulation = False
+
+    def draw(self, screen, offset=(0, 0)):
+        if self.turn_in_progress and self.turn_phase == c.BEFORE_HIT:
+            self.draw_prediction_line(screen, offset=offset)
+        super().draw(screen, offset=offset)
+
+    def mock_collision(self, other):
+        if self.has_collided or other.is_player:
+            return
+        self.has_collided = True
+        self.collided_with = other
