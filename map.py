@@ -145,6 +145,18 @@ class Room(GameObject):
     def get_at(self, x, y):
         return self.tiles[int(y)][int(x)]
 
+    def coordinate_collidable(self, x, y):
+        try:
+
+            temp_tile = self.tiles[int(y)][int(x)]
+            print("wall x: " + str(x) +"   wall y: " + str(y))
+
+            return temp_tile.collidable
+        except:
+            print("ERROR: OUT OF BOUNDS CHECK - SEE coordinate_collidable in map.py")
+            return False
+
+
     def get_at_pixels(self, x, y):
         return self.get_at(x/c.TILE_SIZE, y/c.TILE_SIZE)
 
