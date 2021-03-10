@@ -23,7 +23,8 @@ class LevelScene(Scene):
         self.camera = Camera(game, self.current_room())
 
     def shake(self, amt, pose=None):
-        self.camera.shake(amt, pose)
+        if not self.game.in_simulation:
+            self.camera.shake(amt, pose)
 
     def update_current_ball(self):
         if not self.current_ball.turn_in_progress:

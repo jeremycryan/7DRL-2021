@@ -41,6 +41,7 @@ class Ball(PhysicsObject):
         self.sunk = False
         self.turn_in_progress = False
         self.turn_phase = c.BEFORE_HIT
+        self.is_player = False
 
     def start_turn(self):
         self.turn_in_progress = True
@@ -275,6 +276,8 @@ class Ball(PhysicsObject):
         for ball in balls:
             if ball is self:
                 continue
+            if ball.is_player and ball.is_player:
+                continue
             if not ball.can_collide:
                 continue
             if self._did_collide:
@@ -341,7 +344,7 @@ class Ball(PhysicsObject):
             self._did_collide_wall = False
             if (self.velocity.magnitude() > c.MIN_BOUNCE_REDUCTION_SPEED or c.WALL_BOUNCE_FACTOR):
                 self.velocity.scale_to(self.velocity.magnitude() * c.WALL_BOUNCE_FACTOR)
-            self.game.current_scene.camera.shake(8 * self.velocity.magnitude() / 500, pose=self.velocity)
+            self.game.current_scene.shake(8 * self.velocity.magnitude() / 500, pose=self.velocity)
 
         # TODO iterate through other balls and call self.collide_with_other_ball if colliding
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
@@ -350,7 +353,7 @@ class Ball(PhysicsObject):
     def do_collision(self, mapTile):
         #return()
         #print("wall");
-        self.game.current_scene.camera.shake(8 * self.velocity.magnitude()/500, pose=self.velocity)
+        self.game.current_scene.shake(8 * self.velocity.magnitude()/500, pose=self.velocity)
 
         #shift pose away from wall
         #relative_position = self.pose - self.map_coordinate_to_pose(mapTile)
@@ -367,7 +370,6 @@ class Ball(PhysicsObject):
         elif mapTile.right_bumper :#and relative_position.x - self.radius - c.COLLIDER_SIZE >0:
             self.velocity.x = abs(self.velocity.x)
             self.pose.x = (self.map_coordinate_to_pose(mapTile).x + c.TILE_SIZE/2) + self.radius
-
 
         if(self.velocity.magnitude() < c.MIN_WALL_BOUNCE_SPEED):
             self.velocity.scale_to(c.MIN_WALL_BOUNCE_SPEED)
@@ -569,7 +571,7 @@ class Ball(PhysicsObject):
 
     def collide_with_tile(self, tile):
         # TODO
-        self.game.current_scene.camera.shake(5)
+        self.game.current_scene.shake(5)
 
         # Offset balls
         collision_normal = self.pose - other.pose
@@ -667,6 +669,8 @@ class Ball(PhysicsObject):
             self.game.current_scene.particles.append(spark)
 
     def make_smoke(self, position, num):
+        if self.game.in_simulation:
+            return
         for i in range(num):
             smoke = SmokeBit(self.game, *position)
             smoke.radius *= self.radius/60
