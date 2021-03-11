@@ -78,7 +78,7 @@ class Pose:
         return (self - other).magnitude()
 
     def magnitude(self):
-        distance = math.sqrt(self.x**2 + self.y**2)
+        distance = math.sqrt(self.x*self.x + self.y*self.y)
         return distance
 
     def clear(self):

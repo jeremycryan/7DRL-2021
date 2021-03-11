@@ -59,6 +59,9 @@ class Player(Ball):
         self.knock(self.active_cue, angle, power)
 
     def draw_prediction_line(self, screen, offset=(0, 0)):
+        if not self.turn_in_progress or not self.turn_phase == c.BEFORE_HIT:
+            return
+
         self.game.in_simulation = True
         player_copy = copy(self)
         player_copy.pose = self.pose.copy()
@@ -70,6 +73,8 @@ class Player(Ball):
 
         traveled = 0
         positions = []
+        old = player_copy.pose.copy()
+        final_position = None
         for i in range(c.SIM_ITERATIONS):
 
             if(c.VARIABLE_SIM_SPEED):
@@ -82,7 +87,7 @@ class Player(Ball):
                 if near_wall and player_copy.velocity.magnitude() >3:
                     sim_update = (c.SIM_MOVEMENT / player_copy.velocity.magnitude() / c.SIM_NEAR_WALL_STEP_REDUCTION)
                 elif player_copy.velocity.magnitude() > 3:
-                   sim_update = (c.SIM_MOVEMENT/player_copy.velocity.magnitude())
+                    sim_update = (c.SIM_MOVEMENT/player_copy.velocity.magnitude())
                 else:
                     sim_update = 1 / c.SIM_MIN_FPS
                 #mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius + );
@@ -92,23 +97,52 @@ class Player(Ball):
             player_copy.update(sim_update, [])
             positions.append(player_copy.pose.copy())
             if player_copy.has_collided:
+                final_position = player_copy.pose.copy()
+                break
+            if player_copy.velocity.magnitude() < 1:
+                final_position = player_copy.pose.copy()
+                break
+            if player_copy.sunk:
                 break
 
-        surf = pygame.Surface((self.radius*2, self.radius*2))
+            new = player_copy.pose.copy()
+            traveled += (new - old).magnitude()
+            old = new
+            if traveled > c.SIM_MAX_DIST:
+                print(f"traveled more than {traveled}")
+                break
+
+        print(final_position)
+
+        surf = pygame.Surface((3, 3))
         surf.fill(c.BLACK)
-        pygame.draw.circle(surf, c.WHITE, (self.radius, self.radius), 2)
+        pygame.draw.circle(surf, c.WHITE, (surf.get_width()//2, surf.get_width()//2), surf.get_width()//2)
         alpha = 255
         surf.set_colorkey(c.BLACK)
         for pose in positions[::1]:
-            alpha -= 250/c.SIM_ITERATIONS
             surf.set_alpha(alpha)
-            screen.blit(surf, (pose.x + offset[0] - self.radius, pose.y + offset[1] - self.radius))
+            screen.blit(surf, (pose.x + offset[0] - surf.get_width()//2, pose.y + offset[1] - surf.get_width()//2))
+
+        offset_pose = Pose(offset, 0)
+
+        if player_copy.collided_with:
+            other = player_copy.collided_with
+            to_other = other.pose - player_copy.pose
+            angle = -math.atan2(to_other.y, to_other.x)
+            pointer = pygame.transform.rotate(self.pointer, angle*180/math.pi)
+            pointer_length = 100
+            start = other.pose - to_other*(1/to_other.magnitude())*other.radius + offset_pose
+            end = start + to_other*(1/to_other.magnitude())*pointer_length
+            pygame.draw.line(screen, c.WHITE, start.get_position(), end.get_position())
+            screen.blit(pointer, (end.x - pointer.get_width()//2, end.y - pointer.get_height()//2))
+
+        if final_position:
+            final_position += offset_pose
+            pygame.draw.circle(screen, c.WHITE, final_position.get_position(), player_copy.radius, 2)
 
         self.game.in_simulation = False
 
     def draw(self, screen, offset=(0, 0)):
-        if self.turn_in_progress and self.turn_phase == c.BEFORE_HIT:
-            self.draw_prediction_line(screen, offset=offset)
         super().draw(screen, offset=offset)
 
     def mock_collision(self, other):

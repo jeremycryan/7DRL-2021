@@ -77,6 +77,7 @@ class LevelScene(Scene):
             ball.draw_shadow(surface, offset=offset)
         for ball in self.balls:
             ball.draw(surface, offset=offset)
+        self.player.draw_prediction_line(surface, offset=offset)
         for particle in self.particles:
             particle.draw(surface, offset=offset)
 

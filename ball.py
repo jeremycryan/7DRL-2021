@@ -42,6 +42,8 @@ class Ball(PhysicsObject):
         self.turn_in_progress = False
         self.turn_phase = c.BEFORE_HIT
         self.is_player = False
+        self.pointer = pygame.image.load(c.image_path("pointer.png"))
+        self.pointer.set_colorkey(c.BLACK)
 
     def start_turn(self):
         self.turn_in_progress = True
@@ -284,7 +286,12 @@ class Ball(PhysicsObject):
                 return
             if ball._did_collide:
                 continue
-            if (self.pose - ball.pose).magnitude() < self.radius + ball.radius:
+            total_radius = self.radius + ball.radius
+
+            # Abs and conditionals are fast. Check this first to save time
+            if (abs(self.pose.x - ball.pose.x) > total_radius) or (abs(self.pose.y - ball.pose.y > total_radius)):
+                continue
+            if (self.pose - ball.pose).magnitude() < total_radius:
                 #It Hit
                 #print( (self.pose - ball.pose).magnitude() )
 

@@ -42,6 +42,8 @@ class Pocket(GameObject):
 
     def can_swallow(self, ball):
         diff = self.pose - ball.pose
+        if abs(diff.x - self.pose.y) < self.radius or abs(diff.y - self.pose.y) < self.radius:
+            return False
         if diff.magnitude() < self.radius:
             return True
         return False
