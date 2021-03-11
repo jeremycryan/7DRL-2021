@@ -1,6 +1,7 @@
 from primitives import GameObject, Pose
 import constants as c
 import math
+import pygame
 
 
 class Camera(GameObject):
@@ -15,7 +16,10 @@ class Camera(GameObject):
         self.direction = Pose((1, 1), 0)
 
     def update(self, dt, events):
-        diff = self.object_to_track.pose - self.pose - self.mid_pose
+        mouse_pose = Pose(pygame.mouse.get_pos(), 0) - Pose((c.WINDOW_WIDTH//2, c.WINDOW_HEIGHT//2), 0)
+        if not (hasattr(self.game.current_scene, "player") and self.game.current_scene.player.turn_in_progress and self.game.current_scene.player.turn_phase == c.BEFORE_HIT):
+            mouse_pose *= 0
+        diff = self.object_to_track.pose - self.pose + mouse_pose * 0.12 - self.mid_pose
         if diff.magnitude() > 2:
             self.pose += diff * dt * 5
         self.shake_amp *= 0.005**dt

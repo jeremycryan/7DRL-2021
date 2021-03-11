@@ -4,23 +4,25 @@ from player import Player
 from map import Map
 from camera import Camera
 import pygame
+import constants as c
 
 
 class LevelScene(Scene):
     def __init__(self, game):
         super().__init__(game)
-        self.player = Player(game, 200, 500)
-        self.balls = [self.player,
-                      Ball(self.game, 300, 250)]
+        self.map = Map(self.game)
+        self.player = Player(game, *self.map.player_spawn())
+        self.balls = [self.player]
+                      #Ball(self.game, 300, 250)]
                       # Ball(self.game, 400, 200, 50),
                       # Ball(self.game, 550, 150),
                       # Shelled(self.game, Ball(self.game), x=500, y=500)]
         self.current_ball = self.player
         self.current_ball.turn_in_progress = True
-        self.map = Map(self.game)
         self.particles = []
         self.floor_particles = []
         self.camera = Camera(game, self.current_room())
+        self.force_player_next = False
 
     def shake(self, amt, pose=None):
         if not self.game.in_simulation:
@@ -28,8 +30,12 @@ class LevelScene(Scene):
 
     def update_current_ball(self):
         if not self.current_ball.turn_in_progress:
-            index = (self.balls.index(self.current_ball) + 1) % len(self.balls)
-            self.current_ball = self.balls[index]
+            if self.force_player_next:
+                self.current_ball = self.player
+                self.force_player_next = False
+            else:
+                index = (self.balls.index(self.current_ball) + 1) % len(self.balls)
+                self.current_ball = self.balls[index]
             self.current_ball.start_turn()
 
     def no_enemies(self):
@@ -68,7 +74,7 @@ class LevelScene(Scene):
         self.camera.object_to_track = self.current_room()
 
     def draw(self, surface, offset=(0, 0)):
-        surface.fill((30, 80, 30))
+        surface.fill(c.BLACK)
         offset = self.camera.add_offset(offset)
         self.map.draw(surface, offset=offset)
         for particle in self.floor_particles:
@@ -80,6 +86,11 @@ class LevelScene(Scene):
         self.player.draw_prediction_line(surface, offset=offset)
         for particle in self.particles:
             particle.draw(surface, offset=offset)
+
+    def spawn_balls(self):
+        offset = self.current_room().center()
+        self.balls += [Ball(self.game, offset[0] - 200, offset[1] - 140)]
+        self.force_player_next = True
 
     def current_room(self):
         return self.map.get_at_pixels(*self.player.pose.get_position())
