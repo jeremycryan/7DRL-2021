@@ -232,11 +232,21 @@ class Room(GameObject):
     def get_at(self, x, y):
         return self.tiles[int(y)][int(x)]
 
+    def get_at_global(self, x, y):
+        x = int(x) - (self.x * c.ROOM_WIDTH_TILES)
+        y = int(y) - (self.y * c.ROOM_HEIGHT_TILES)
+        if x < 0 or y < 0 or x > len(self.tiles[0]) - 1 or y > len(self.tiles) - 1:
+            #print("GLOBAL GRAB FAILED")
+            return False
+        return self.tiles[y][x]
+
     def coordinate_collidable(self, x, y):
+        x += self.x * c.ROOM_WIDTH_TILES
+        y += self.y * c.ROOM_HEIGHT_TILES
         if x < 0 or y < 0 or x > len(self.tiles[0]) - 1 or y > len(self.tiles) - 1:
             return False
         temp_tile = self.tiles[int(y)][int(x)]
-        print("wall x: " + str(x) +"   wall y: " + str(y))
+        #print("wall x: " + str(x) +"   wall y: " + str(y))
 
         return temp_tile.collidable
 
@@ -346,6 +356,7 @@ class Tile(GameObject):
         if not self.parent:
             if self.key in [c.UP_WALL, c.DOWN_WALL, c.LEFT_WALL, c.RIGHT_WALL]:
                 self.collidable = False
+
                 return
         openings = self.parent.openings
         if self.key==c.UP_WALL and c.UP in openings:

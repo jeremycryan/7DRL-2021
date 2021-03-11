@@ -36,6 +36,7 @@ class Player(Ball):
         if not self.game.in_simulation:
             print(self.is_completely_in_room(), not current_room.enemies_have_spawned, self.game.current_scene.all_balls_below_speed())
         if self.is_completely_in_room() and not current_room.enemies_have_spawned and self.game.current_scene.all_balls_below_speed():
+            print("in room")
             current_room.doors_close()
             current_room.spawn_enemies()
         elif current_room.enemies_have_spawned and not current_room.doors_are_open and self.game.current_scene.no_enemies():
@@ -81,17 +82,21 @@ class Player(Ball):
         for i in range(c.SIM_ITERATIONS):
 
             if(c.VARIABLE_SIM_SPEED):
-                mapTiles = self.game.current_scene.map.tiles_near(player_copy.pose, player_copy.radius + c.SIM_MOVEMENT);
                 near_wall = False
-                for mapTile in mapTiles:
-                    if(mapTile.collidable):
-                        near_wall = True
-                        break
+                if(c.SIM_NEAR_WALL_STEP_REDUCTION != 1):
+                    mapTiles = self.game.current_scene.map.tiles_near(player_copy.pose, player_copy.radius + c.SIM_MOVEMENT);
+                    for mapTile in mapTiles:
+                        if(mapTile.collidable):
+                            near_wall = True
+                            break
                 if near_wall and player_copy.velocity.magnitude() >3:
                     sim_update = (c.SIM_MOVEMENT / player_copy.velocity.magnitude() / c.SIM_NEAR_WALL_STEP_REDUCTION)
-                elif player_copy.velocity.magnitude() > 3:
+                elif player_copy.velocity.magnitude() > 1:
                     sim_update = (c.SIM_MOVEMENT/player_copy.velocity.magnitude())
                 else:
+                    break
+                    sim_update = 1 / c.SIM_MIN_FPS
+                if(sim_update> 1/1 / c.SIM_MIN_FPS):
                     sim_update = 1 / c.SIM_MIN_FPS
                 #mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius + );
             else:
@@ -172,5 +177,6 @@ class Player(Ball):
         interpolated_offset = ((self.radius + other.radius) / math.sin(angle_vel)) * math.sin(angle_c)
         # print("OFFSET :" + str(interpolated_offset) + "    angle C: " + str(math.degrees(angle_c)) + "    angle vel: " + str(math.degrees(angle_vel)))
 
-        self.pose -= velocity_vector * abs(interpolated_offset) * (self.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
-        other.pose += velocity_vector * abs(interpolated_offset) * (other.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
+        if(self.velocity.magnitude() + other.velocity.magnitude()) != 0:
+            self.pose -= velocity_vector * abs(interpolated_offset) * (self.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
+            #other.pose += velocity_vector * abs(interpolated_offset) * (other.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))

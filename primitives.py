@@ -118,6 +118,18 @@ class Pose:
         copy.angle *= other
         return copy
 
+    def __pow__(self, other):
+        copy = self.copy()
+        if(copy.x>=0):
+            copy.x = copy.x ** other
+        else:
+            copy.x = (abs(copy.x) ** other) * -1
+        if (copy.y >= 0):
+            copy.y = copy.y ** other
+        else:
+            copy.y = (abs(copy.y) ** other) * -1
+        return copy
+
     def __str__(self):
         return f"<Pose x:{self.x} y:{self.y} angle:{self.angle}>"
 
