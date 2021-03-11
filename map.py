@@ -74,6 +74,17 @@ class Map(GameObject):
         if y < len(self.rooms) - 1:
             yield self.rooms[y+1][x]
 
+    def connected_neighbors(self, room):
+        x, y = room.x, room.y
+        if x > 0 and c.LEFT in room.openings:
+            yield self.rooms[y][x-1]
+        if x < len(self.rooms[0]) - 1 and c.RIGHT in room.openings:
+            yield self.rooms[y][x+1]
+        if y > 0 and c.UP in room.openings:
+            yield self.rooms[y-1][x]
+        if y < len(self.rooms) - 1 and c.DOWN in room.openings:
+            yield self.rooms[y+1][x]
+
     def get_at(self, x, y):
         return self.rooms[int(y)][int(x)]
 
@@ -160,6 +171,14 @@ class Room(GameObject):
             if x >= c.ROOM_WIDTH_TILES or y >= c.ROOM_HEIGHT_TILES:
                 continue
             if not tile.collidable:
+                tile.left_bumper = False
+                tile.right_bumper = False
+                tile.down_bumper = False
+                tile.up_bumper = False
+                tile.top_right_corner = False
+                tile.top_left_corner = False
+                tile.bottom_right_corner = False
+                tile.bottom_left_corner = False
                 continue
             tile.left_bumper = True
             tile.right_bumper = True
@@ -262,6 +281,8 @@ class Room(GameObject):
         for tile in self.tile_iter():
             tile.generate_surface()
         self.doors_are_open = False
+        for pocket in self.pockets:
+            pocket.open()
 
     def doors_open(self):
         for tile in self.tile_iter():
@@ -270,6 +291,8 @@ class Room(GameObject):
         for tile in self.tile_iter():
             tile.generate_surface()
         self.doors_are_open = True
+        for pocket in self.pockets:
+            pocket.close()
 
     def spawn_enemies(self):
         if self.enemies_have_spawned:

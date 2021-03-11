@@ -18,7 +18,7 @@ class Pocket(GameObject):
         self.surf.fill(c.MAGENTA)
         self.surf.set_colorkey(c.MAGENTA)
         self.eaten = []
-        self.hungry = True
+        self.hungry = False
         pygame.draw.circle(self.surf, c.CYAN, (self.radius, self.radius), self.radius)
 
     def update(self, dt, events):
@@ -28,6 +28,8 @@ class Pocket(GameObject):
             self.scale = self.target_scale  # Weird way of coding "don't let it oscillate"
 
     def draw(self, surf, offset=(0, 0)):
+        if not self.hungry:
+            return
         x = self.pose.x - self.surf.get_width()//2 * self.scale + offset[0]
         y = self.pose.y - self.surf.get_height()//2 * self.scale + offset[1]
         surf_to_blit = pygame.transform.scale(self.surf,
@@ -38,9 +40,16 @@ class Pocket(GameObject):
     def swallow(self, ball):
         self.eaten.append(ball)
         ball.sink(self.pose.copy())
-        print("NOMNOMNOM")
+
+    def open(self):
+        self.hungry = True
+
+    def close(self):
+        self.hungry = False
 
     def can_swallow(self, ball):
+        if not self.hungry:
+            return False
         diff = self.pose - ball.pose
         if abs(diff.x - self.pose.y) < self.radius or abs(diff.y - self.pose.y) < self.radius:
             return False

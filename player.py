@@ -33,6 +33,8 @@ class Player(Ball):
         super().update(dt, events)
 
         current_room = self.game.current_scene.current_room()
+        if not self.game.in_simulation:
+            print(self.is_completely_in_room(), not current_room.enemies_have_spawned, self.game.current_scene.all_balls_below_speed())
         if self.is_completely_in_room() and not current_room.enemies_have_spawned and self.game.current_scene.all_balls_below_speed():
             current_room.doors_close()
             current_room.spawn_enemies()
