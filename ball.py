@@ -269,7 +269,7 @@ class Ball(PhysicsObject):
         balls = self.game.current_scene.balls;
         mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1);
 
-        for pocket in self.game.current_scene.map.pockets_iter():
+        for pocket in self.game.current_scene.current_room().pockets:
             if pocket.can_swallow(self) and self.can_be_sunk:
                 pocket.swallow(self)
                 return

@@ -109,7 +109,6 @@ class Player(Ball):
             traveled += (new - old).magnitude()
             old = new
             if traveled > c.SIM_MAX_DIST:
-                print(f"traveled more than {traveled}")
                 break
 
         print(final_position)
