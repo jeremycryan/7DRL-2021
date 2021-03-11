@@ -152,9 +152,12 @@ class Ball(PhysicsObject):
 
     def is_completely_in_room(self):
         tiles = self.game.current_scene.map.tiles_near(self.pose, self.radius)
+        #print(len(list(tiles)))
         if not len(list(tiles)):
             return False
+        tiles = self.game.current_scene.map.tiles_near(self.pose, self.radius)
         for tile in tiles:
+
             if tile.key not in [c.EMPTY, c.POCKET]:
                 return False
         return True
@@ -208,7 +211,9 @@ class Ball(PhysicsObject):
 
         super().update(dt, events)  # update position based on velocity, velocity based on acceleration
 
+        #self.drag_continous(dt)
         self.drag(dt)
+
         self.since_smoke += dt
         period = 0.04
         while self.since_smoke > period:
@@ -242,28 +247,38 @@ class Ball(PhysicsObject):
             self.velocity.scale_to(self.max_speed)
         self.velocity -= self.velocity * self.drag_multiplicative * dt;
         _temp_velocity = self.velocity.copy();
-        _temp_velocity.scale_to(1);
-        # if(self.velocity.x > 0):
-        #     posX = True
-        # else:
-        #     posX = False
-        # if (self.velocity.y > 0):
-        #     posY = True
-        # else:
-        #     posY = False
+        _temp_velocity.scale_to(1)
 
         self.velocity -= _temp_velocity * self.drag_constant * dt;
 
         _drag_factor = _temp_velocity * self.drag_constant * dt;
 
-
-        #if ((self.velocity.x > 0 and not posX) or (self.velocity.x < 0 and posX) or (self.velocity.y > 0 and not posY) or (self.velocity.y < 0 and posY) ):
-        #    self.velocity = Pose((0,0),0);
-
         if(_drag_factor.magnitude() >= self.velocity.magnitude() ):
             self.velocity = Pose((0,0),0)
 
+    def drag_continous(self, dt):
 
+        b = 5
+        g = .1
+        c = .03
+        drag_scaling_factor = 1
+
+        if(self.velocity.magnitude() != 0):
+
+            #(c*v+b*v^(g))
+            velocity_vect = self.velocity.copy()
+            velocity_vect.scale_to(1)
+
+            velocity_reduction_point_time = abs(self.velocity.magnitude()*c + (self.velocity.magnitude()**g) * b)
+            velocity_reduction_point_time -= dt*drag_scaling_factor
+            if(velocity_reduction_point_time<0):
+                velocity_reduction_point = 0
+            velocity_reduced =  self.velocity.magnitude() - abs(velocity_reduction_point_time*c + (velocity_reduction_point_time**g) * b)
+            if(abs(velocity_reduced) < self.velocity.magnitude()):
+                print("REDUCCED TO ;" + str(velocity_reduced))
+                self.velocity = velocity_vect * velocity_reduced
+            else:
+                self.velocity.scale_to(0)
 
     def update_collisions(self):
         if not self.can_collide:
@@ -361,13 +376,96 @@ class Ball(PhysicsObject):
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
         pass
 
-    def do_collision(self, mapTile):
+    def do_collision(self, mapTile, interpolate_checked = False):
         #return()
         #print("wall");
+        relative_position = self.pose - self.map_coordinate_to_pose(mapTile)
+
+        if(not interpolate_checked):
+            #NEARBY CHECK HERE, NEED TO MAKE SURE DIDN"T GLITCH THOUGH EDGE AND HIT THIS, POTENTIALLY PASS BACK TO CORNER COLLIDE
+            velocity_vector = self.velocity.copy()
+            velocity_vector.scale_to(1)
+            slope = velocity_vector.y /velocity_vector.x
+            offset_interpolate = Pose((0,0),0)
+
+            if(mapTile.down_bumper):
+                if(slope == 0):
+                    offset_interpolate.x = 0
+                else:
+                    offset_interpolate.x = (.5*c.TILE_SIZE - (relative_position.y - self.radius))/slope
+                offset_interpolate.y =  .5*c.TILE_SIZE - relative_position.y
+
+            elif (mapTile.up_bumper):
+                if (slope == 0):
+                    offset_interpolate.x = 0
+                else:
+                    offset_interpolate.x = (-.5 * c.TILE_SIZE - (relative_position.y + self.radius)) / slope
+                offset_interpolate.y = -.5 * c.TILE_SIZE + relative_position.y
+
+            elif (mapTile.right_bumper):
+                offset_interpolate.y = (.5 * c.TILE_SIZE - (relative_position.x - self.radius)) * slope
+                offset_interpolate.x = .5 * c.TILE_SIZE - relative_position.x
+
+            elif (mapTile.left_bumper):
+                offset_interpolate.y = (-.5 * c.TILE_SIZE - (relative_position.x + self.radius)) * slope
+                offset_interpolate.x = -.5 * c.TILE_SIZE + relative_position.x
+
+            if(offset_interpolate.x< -c.TILE_SIZE):
+                offset_interpolate.x = -c.TILE_SIZE
+            elif(offset_interpolate.x> c.TILE_SIZE):
+                offset_interpolate.x = c.TILE_SIZE
+            if (offset_interpolate.y < -c.TILE_SIZE):
+                offset_interpolate.y = -c.TILE_SIZE
+            elif (offset_interpolate.y > c.TILE_SIZE):
+                offset_interpolate.y = c.TILE_SIZE
+
+
+            interpolated_position = offset_interpolate+self.pose
+            current_room = self.game.current_scene.current_room()
+            map_pose = self.round_to_map_coordinate(interpolated_position)
+            wall_tile_checker = current_room.get_at_global(map_pose.x, map_pose.y)
+
+            if(wall_tile_checker!=False):
+                if(wall_tile_checker.top_right_corner or wall_tile_checker.top_left_corner or wall_tile_checker.bottom_right_corner or wall_tile_checker.bottom_left_corner) and wall_tile_checker.collidable:
+                    relative_pose = (self.map_coordinate_to_pose(wall_tile_checker) - self.pose)
+                    print("SENDING TO CORNER CODE!")
+                    if wall_tile_checker.collidable and (abs(relative_pose.x) < c.TILE_SIZE / 2 + self.radius and abs(relative_pose.y) < c.TILE_SIZE / 2 + self.radius):
+                        if(mapTile.top_left_corner):
+                            temp_pose = relative_pose.copy()
+                            temp_pose.x += c.TILE_SIZE / 2
+                            temp_pose.y += c.TILE_SIZE / 2
+                            if (temp_pose.magnitude() < c.TILE_SIZE + self.radius):
+                                self._did_collide_wall = True;
+                                self.collide_with_wall_corner_2(temp_pose, mapTile, True)
+                        elif (mapTile.top_right_corner):
+                            temp_pose = relative_pose.copy()
+                            temp_pose.x -= c.TILE_SIZE / 2
+                            temp_pose.y += c.TILE_SIZE / 2
+                            if (temp_pose.magnitude() < c.TILE_SIZE + self.radius):
+                                self._did_collide_wall = True;
+                                self.collide_with_wall_corner_2(temp_pose, mapTile, True)
+                        elif (mapTile.bottom_left_corner):
+                            temp_pose = relative_pose.copy()
+                            temp_pose.x += c.TILE_SIZE / 2
+                            temp_pose.y -= c.TILE_SIZE / 2
+                            if (temp_pose.magnitude() < c.TILE_SIZE + self.radius):
+                                self._did_collide_wall = True;
+                                self.collide_with_wall_corner_2(temp_pose, mapTile, True)
+                        elif (mapTile.bottom_right_corner):
+                            temp_pose = relative_pose.copy()
+                            temp_pose.x -= c.TILE_SIZE / 2
+                            temp_pose.y -= c.TILE_SIZE / 2
+                            if (temp_pose.magnitude() < c.TILE_SIZE + self.radius):
+                                self._did_collide_wall = True;
+                                self.collide_with_wall_corner_2(temp_pose, mapTile, True)
+                else:
+                    self.pose = interpolated_position
+            else:
+                self.pose = interpolated_position
+
         self.game.current_scene.shake(8 * self.velocity.magnitude()/500, pose=self.velocity)
 
         #shift pose away from wall
-        #relative_position = self.pose - self.map_coordinate_to_pose(mapTile)
 
         if mapTile.down_bumper :#and relative_position.y - self.radius - c.COLLIDER_SIZE >0 :
             self.velocity.y = abs(self.velocity.y)
@@ -413,7 +511,7 @@ class Ball(PhysicsObject):
 
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         collision_normal.scale_to(1)
-        velocity_vector = self.velocity.copy()
+        velocity_vector = self.velocity - other.velocity
         velocity_vector.scale_to(1)
         # self.pose += velocity_vector * (offset_required * math.cos(math.atan2(velocity_vector.y-collision_normal.y, velocity_vector.x-collision_normal.x)))
         dot_product_self_norm = collision_normal.x * velocity_vector.x + collision_normal.y * velocity_vector.y;
@@ -501,68 +599,69 @@ class Ball(PhysicsObject):
         output_velocity_vector = (collision_normal * 2 * dot_product_self - self.velocity) * wall_tile.bounce_factor
         pass
 
-    def collide_with_wall_corner_2(self, relative_pose, wall_tile):
+    def collide_with_wall_corner_2(self, relative_pose, wall_tile, interpolate_checked = False):
 
         #print("Wall_corner")
 
+        if(not interpolate_checked or True): #CURRENTLY FOCING TO ALLWAYS RUN - THIS MIGHT WORK AND NOT CREATE AN INFINATE LOOP BECAUSE INTERPOLATING AN INERPOLATED POINT SHOULD NOT CALL A WALL AGAIN
+            center_ball_2_center_wall = relative_pose.copy()
+            collision_normal = center_ball_2_center_wall.copy()
+
+
+            if( (center_ball_2_center_wall.x >= 0 and (wall_tile.top_right_corner or wall_tile.bottom_right_corner)) or \
+                (center_ball_2_center_wall.x <= 0 and (wall_tile.top_left_corner or wall_tile.bottom_left_corner)) or \
+                (center_ball_2_center_wall.y <= 0 and (wall_tile.top_left_corner or wall_tile.top_right_corner)) or \
+                (center_ball_2_center_wall.y >= 0 and (wall_tile.bottom_left_corner or wall_tile.bottom_right_corner))   ):
+                return
+
+            # Offset balls
+
+            #offset_required = (collision_normal.magnitude() - (self.radius + c.TILE_SIZE))
+            collision_normal.scale_to(1)
+            velocity_vector = self.velocity.copy()
+            velocity_vector.scale_to(1)
+            #self.pose += velocity_vector * (offset_required * math.cos(math.atan2(velocity_vector.y-collision_normal.y, velocity_vector.x-collision_normal.x)))
+            dot_product_self_norm = -collision_normal.x * velocity_vector.x + -collision_normal.y * velocity_vector.y;
+
+            if (collision_normal.magnitude() * velocity_vector.magnitude()) == 0:
+                angle_vel = 0
+            else:
+                acos_input = dot_product_self_norm / (collision_normal.magnitude() * velocity_vector.magnitude())
+                if(acos_input<-1):
+                    acos_input = -1
+                elif(acos_input>1):
+                    acos_input = 1
+                angle_vel = math.acos(acos_input)
+
+            angle_b = math.asin( (math.sin(angle_vel) / (self.radius + c.TILE_SIZE)) * center_ball_2_center_wall.magnitude() )
+            angle_c = math.pi - (angle_b + angle_vel)
+            if(math.sin(angle_vel) == 0):
+                angle_vel+= math.degrees(1)
+            interpolated_offset = ((self.radius + c.TILE_SIZE)/ math.sin(angle_vel)) * math.sin(angle_c)
+            #print("OFFSET :" + str(interpolated_offset) + "    angle C: " + str(math.degrees(angle_c)) + "    angle vel: " + str(math.degrees(angle_vel)))
+            rewound_self_pose = self.pose - (velocity_vector * abs(interpolated_offset))
+            #self.pose += collision_normal * offset_required #THIS MIGHT BE REVERSED
+            self.pose = rewound_self_pose;
+            ##
+            map_pose = self.round_to_map_coordinate(rewound_self_pose)
+            current_room = self.game.current_scene.current_room()
+            #print("NEW MAP COORDINATE: " +str(map_pose.x) + "    " + str(map_pose.y))
+            newTile = current_room.get_at_global(map_pose.x, map_pose.y)
+            if(newTile != False):
+                if (newTile.up_bumper or newTile.down_bumper or newTile.left_bumper or newTile.right_bumper) and newTile.collidable:
+                #DO WALL SEARCH HERE
+                    self.do_collision(newTile, True)
+                    return()
+                else:
+                    relative_pose += (velocity_vector * abs(interpolated_offset))
+            else:
+                relative_pose += (velocity_vector * abs(interpolated_offset))
+        else:
+            pass
+
         center_ball_2_center_wall = relative_pose.copy()
-
-        if( (center_ball_2_center_wall.x >= 0 and (wall_tile.top_right_corner or wall_tile.bottom_right_corner)) or \
-            (center_ball_2_center_wall.x <= 0 and (wall_tile.top_left_corner or wall_tile.bottom_left_corner)) or \
-            (center_ball_2_center_wall.y <= 0 and (wall_tile.top_left_corner or wall_tile.top_right_corner)) or \
-            (center_ball_2_center_wall.y >= 0 and (wall_tile.bottom_left_corner or wall_tile.bottom_right_corner))   ):
-            return
-
-        # Offset balls
         collision_normal = center_ball_2_center_wall.copy()
-
-        #offset_required = (collision_normal.magnitude() - (self.radius + c.TILE_SIZE))
         collision_normal.scale_to(1)
-        velocity_vector = self.velocity.copy()
-        velocity_vector.scale_to(1)
-        #self.pose += velocity_vector * (offset_required * math.cos(math.atan2(velocity_vector.y-collision_normal.y, velocity_vector.x-collision_normal.x)))
-        dot_product_self_norm = -collision_normal.x * velocity_vector.x + -collision_normal.y * velocity_vector.y;
-
-        angle_vel = math.acos(dot_product_self_norm / (collision_normal.magnitude() * velocity_vector.magnitude()) )
-
-        angle_b = math.asin( (math.sin(angle_vel) / (self.radius + c.TILE_SIZE)) * center_ball_2_center_wall.magnitude() )
-        angle_c = math.pi - (angle_b + angle_vel)
-        interpolated_offset = ((self.radius + c.TILE_SIZE)/ math.sin(angle_vel)) * math.sin(angle_c)
-        #print("OFFSET :" + str(interpolated_offset) + "    angle C: " + str(math.degrees(angle_c)) + "    angle vel: " + str(math.degrees(angle_vel)))
-        rewound_self_pose = self.pose - (velocity_vector * abs(interpolated_offset))
-        #self.pose += collision_normal * offset_required #THIS MIGHT BE REVERSED
-        self.pose = rewound_self_pose;
-        ##
-        relative_rewound_pose = (self.map_coordinate_to_pose(wall_tile) - rewound_self_pose)
-
-        if (wall_tile.top_left_corner):
-            temp_pose = relative_rewound_pose.copy()
-            temp_pose.x += c.TILE_SIZE / 2
-            temp_pose.y += c.TILE_SIZE / 2
-        elif (wall_tile.top_right_corner):
-            temp_pose = relative_rewound_pose.copy()
-            temp_pose.x -= c.TILE_SIZE / 2
-            temp_pose.y += c.TILE_SIZE / 2
-        elif (wall_tile.bottom_left_corner):
-            temp_pose = relative_rewound_pose.copy()
-            temp_pose.x += c.TILE_SIZE / 2
-            temp_pose.y -= c.TILE_SIZE / 2
-        elif (wall_tile.bottom_right_corner):
-            temp_pose = relative_rewound_pose.copy()
-            temp_pose.x -= c.TILE_SIZE / 2
-            temp_pose.y -= c.TILE_SIZE / 2
-
-        if ((temp_pose.x >= 0 and (wall_tile.top_right_corner or wall_tile.bottom_right_corner)) or \
-                (temp_pose.x <= 0 and (wall_tile.top_left_corner or wall_tile.bottom_left_corner)) or \
-                (temp_pose.y <= 0 and (wall_tile.top_left_corner or wall_tile.top_right_corner)) or \
-                (temp_pose.y >= 0 and (wall_tile.bottom_left_corner or wall_tile.bottom_right_corner))):
-            #DO WALL SEARCH HERE
-            temp_pose = self.round_to_map_coordinate(temp_pose)
-            newTile = self.game.current_scene.current_room().get_at(temp_pose.x, temp_pose.y)
-            if not (newTile.top_right_corner or newTile.top_left_corner or newTile.bottom_right_corner or newTile.bottom_left_corner):
-                self.do_collision(newTile)
-                return()
-
 
         #distance =
         #collsion normal must be updated and be updated before changing pose

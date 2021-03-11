@@ -38,7 +38,7 @@ class Pocket(GameObject):
     def swallow(self, ball):
         self.eaten.append(ball)
         ball.sink(self.pose.copy())
-        print("NOMNOMNOM")
+        #print("NOMNOMNOM")
 
     def can_swallow(self, ball):
         diff = self.pose - ball.pose
