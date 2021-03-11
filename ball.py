@@ -151,7 +151,10 @@ class Ball(PhysicsObject):
                 self.back_surface.blit(noise, (x0, y0), special_flags=pygame.BLEND_MULT)
 
     def is_completely_in_room(self):
-        for tile in self.game.current_scene.map.tiles_near(self.pose, self.radius):
+        tiles = self.game.current_scene.map.tiles_near(self.pose, self.radius)
+        if not len(list(tiles)):
+            return False
+        for tile in tiles:
             if tile.key not in [c.EMPTY, c.POCKET]:
                 return False
         return True

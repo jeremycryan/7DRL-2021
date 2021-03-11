@@ -16,6 +16,63 @@ class Map(GameObject):
 
     def generate_rooms(self):
         self.rooms = [[Room(self.game, x, y) for x in range(self.width)] for y in range(self.height)]
+        self.tree_generation()
+
+    def tree_generation(self):
+        origin = self.rooms[self.height//2][self.width//2]
+        origin.generated = True
+        origin.enemies_have_spawned = True
+        for room in self.room_iter():
+            room.openings = []
+        self.make_branch(origin, min_length=1, max_length=8, master=True)
+        for room in self.room_iter():
+            room.doors_open()
+
+    def make_branch(self, start, min_length=1, max_length=8, branch_prob=0.3, master=False):
+        if max_length <= 0:
+            return
+        if not master and (random.random() < 1/(max_length - min_length)):
+            return
+        open_neighbors = []
+        for neighbor in self.neighbors(start):
+            if not neighbor.generated:
+                open_neighbors.append(neighbor)
+
+        if not len(open_neighbors):
+            return
+
+        next = random.choice(open_neighbors)
+        next.generated = True
+
+        dx = next.x - start.x
+        dy = next.y - start.y
+        if dx < 0:
+            start.openings.append(c.LEFT)
+            next.openings.append(c.RIGHT)
+        elif dx > 0:
+            start.openings.append(c.RIGHT)
+            next.openings.append(c.LEFT)
+        elif dy < 0:
+            start.openings.append(c.UP)
+            next.openings.append(c.DOWN)
+        elif dy > 0:
+            start.openings.append(c.DOWN)
+            next.openings.append(c.UP)
+
+        self.make_branch(next, min_length-1, max_length-1, master=True)
+        if random.random() < branch_prob:
+            self.make_branch(next, min_length - 1, max_length - 2)
+
+    def neighbors(self, room):
+        x, y = room.x, room.y
+        if x > 0:
+            yield self.rooms[y][x-1]
+        if x < len(self.rooms[0]) - 1:
+            yield self.rooms[y][x+1]
+        if y > 0:
+            yield self.rooms[y-1][x]
+        if y < len(self.rooms) - 1:
+            yield self.rooms[y+1][x]
 
     def get_at(self, x, y):
         return self.rooms[int(y)][int(x)]
@@ -60,6 +117,10 @@ class Map(GameObject):
             for pocket in room.pockets:
                 yield pocket
 
+    def player_spawn(self):
+        mid_room = self.rooms[self.height//2][self.width//2]
+        return mid_room.player_spawn()
+
 
 class Room(GameObject):
     def __init__(self, game, x, y):
@@ -67,7 +128,7 @@ class Room(GameObject):
         self.y = y
         tile_x_off = self.x * c.ROOM_WIDTH_TILES
         tile_y_off = self.y * c.ROOM_HEIGHT_TILES
-        self.tiles = [[Tile(game, random.choice([c.EMPTY, c.EMPTY, c.EMPTY, c.EMPTY, c.WALL]), tile_x_off + x, tile_y_off + y)
+        self.tiles = [[Tile(game, random.choice([c.EMPTY, c.EMPTY, c.EMPTY, c.EMPTY, c.WALL]), tile_x_off + x, tile_y_off + y, parent=self)
                        for x in range(c.ROOM_WIDTH_TILES)]
                       for y in range(c.ROOM_HEIGHT_TILES)]
         self.game = game
@@ -83,6 +144,13 @@ class Room(GameObject):
         self.pose = Pose((x + w/2, y + h/2), 0)
         self.enemies_have_spawned = False
         self.doors_are_open = True
+        self.generated = False
+
+    def player_spawn(self):
+        return self.center()
+
+    def center(self):
+        return (self.x + 0.5)*c.ROOM_WIDTH_TILES*c.TILE_SIZE, (self.y + 0.5)*c.ROOM_HEIGHT_TILES*c.TILE_SIZE
 
     def add_tile_collisions(self):
         for tile in self.tile_iter():
@@ -137,7 +205,7 @@ class Room(GameObject):
         for y, row in enumerate(lines[1:]):
             row = row.strip()
             for x, character in enumerate(row):
-                self.tiles[y][x] = Tile(self.game, character, self.x * c.ROOM_WIDTH_TILES + x, self.y * c.ROOM_HEIGHT_TILES + y)
+                self.tiles[y][x] = Tile(self.game, character, self.x * c.ROOM_WIDTH_TILES + x, self.y * c.ROOM_HEIGHT_TILES + y, parent=self)
                 if character == c.POCKET:
                     self.pockets.append(Pocket(self.game, self.tiles[y][x]))
         self.add_tile_collisions()
@@ -146,15 +214,12 @@ class Room(GameObject):
         return self.tiles[int(y)][int(x)]
 
     def coordinate_collidable(self, x, y):
-        try:
-
-            temp_tile = self.tiles[int(y)][int(x)]
-            print("wall x: " + str(x) +"   wall y: " + str(y))
-
-            return temp_tile.collidable
-        except:
-            print("ERROR: OUT OF BOUNDS CHECK - SEE coordinate_collidable in map.py")
+        if x < 0 or y < 0 or x > len(self.tiles[0]) - 1 or y > len(self.tiles) - 1:
             return False
+        temp_tile = self.tiles[int(y)][int(x)]
+        print("wall x: " + str(x) +"   wall y: " + str(y))
+
+        return temp_tile.collidable
 
 
     def get_at_pixels(self, x, y):
@@ -167,6 +232,11 @@ class Room(GameObject):
             tile.update(dt, events)
 
     def draw(self, surface, offset=(0, 0)):
+        if not self.generated:
+            return
+        current_room = self.game.current_scene.current_room()
+        if self is not current_room and not current_room.doors_are_open:
+            return
         if offset[0] + self.x*c.ROOM_WIDTH_TILES*c.TILE_SIZE < -c.WINDOW_WIDTH - c.TILE_SIZE or \
             offset[1] + self.y*c.ROOM_HEIGHT_TILES*c.TILE_SIZE < -c.WINDOW_HEIGHT - c.TILE_SIZE or \
             offset[0] + self.x*c.ROOM_WIDTH_TILES*c.TILE_SIZE > c.WINDOW_WIDTH or \
@@ -202,7 +272,10 @@ class Room(GameObject):
         self.doors_are_open = True
 
     def spawn_enemies(self):
+        if self.enemies_have_spawned:
+            return
         self.enemies_have_spawned = True
+        self.game.current_scene.spawn_balls()
 
 
 class Tile(GameObject):
@@ -215,7 +288,8 @@ class Tile(GameObject):
                  up_bumper = False,
                  left_bumper = False,
                  right_bumper = False,
-                 bounce_factor = .95):
+                 bounce_factor = .95,
+                 parent=None):
         self.game = game
 
         self.key = key
@@ -231,11 +305,12 @@ class Tile(GameObject):
         self.right_bumper = right_bumper
         self.bounce_factor = bounce_factor
 
-        if key in [c.EMPTY, c.POCKET, c.LEFT_WALL, c.RIGHT_WALL, c.DOWN_WALL, c.UP_WALL]:
+        if key in [c.EMPTY, c.POCKET]:
             self.collidable = False
 
         self.x = x
         self.y = y
+        self.parent = parent
 
     def update(self, dt, events):
         pass
@@ -245,7 +320,18 @@ class Tile(GameObject):
             self.collidable = True
 
     def doors_open(self):
-        if self.key in [c.UP_WALL, c.DOWN_WALL, c.LEFT_WALL, c.RIGHT_WALL]:
+        if not self.parent:
+            if self.key in [c.UP_WALL, c.DOWN_WALL, c.LEFT_WALL, c.RIGHT_WALL]:
+                self.collidable = False
+                return
+        openings = self.parent.openings
+        if self.key==c.UP_WALL and c.UP in openings:
+            self.collidable = False
+        elif self.key==c.DOWN_WALL and c.DOWN in openings:
+            self.collidable = False
+        elif self.key==c.RIGHT_WALL and c.RIGHT in openings:
+            self.collidable = False
+        elif self.key==c.LEFT_WALL and c.LEFT in openings:
             self.collidable = False
 
     def generate_surface(self):
