@@ -77,7 +77,7 @@ class Ball(PhysicsObject):
             desired_pocket += 1
             if desired_pocket>= len(pockets):
                 wall_check_success = False
-                print("BREAK, is_wall = " + str(is_wall))
+                #print("BREAK, is_wall = " + str(is_wall))
                 break
             is_wall = False
             current_step = 0
@@ -95,12 +95,12 @@ class Ball(PhysicsObject):
                 #is_wall = test_tile.collidable
 
                 is_wall = current_room.coordinate_collidable(to_test_pose.x, to_test_pose.y)
-                if(is_wall):
-                    print("FOUND WALL")
+                #if(is_wall):
+                    #print("FOUND WALL")
 
                 current_step += c.TILE_SIZE/2
 
-        print("DESIRED POCKET NUMBER " + str(desired_pocket))
+        #print("DESIRED POCKET NUMBER " + str(desired_pocket))
 
         goal_pocket_angle =  math.degrees(math.atan2(relative_position_player_to_pocket.y, -relative_position_player_to_pocket.x))
 
@@ -114,7 +114,7 @@ class Ball(PhysicsObject):
         elif(goal_offset_angle< -c.AI_MAX_ANGLE_REDUCTION):
             goal_offset_angle = -c.AI_MAX_ANGLE_REDUCTION
 
-        print(goal_offset_angle)
+        #print(goal_offset_angle)
 
 
         self.knock(BasicCue(), to_player_degrees - goal_offset_angle, 120)
@@ -338,14 +338,15 @@ class Ball(PhysicsObject):
                         self.collide_with_wall_corner_2(temp_pose, mapTile)
 
         mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1);
-        for mapTile in mapTiles:  # CORNERS FIRST
+        for mapTile in mapTiles:
             if (mapTile.top_right_corner or mapTile.top_left_corner or mapTile.bottom_right_corner or mapTile.bottom_left_corner):
                 continue
             relative_pose = (self.map_coordinate_to_pose(mapTile) - self.pose)
 
-            if mapTile.collidable and (abs(relative_pose.x) < c.TILE_SIZE / 2 + self.radius and abs(relative_pose.y) < c.TILE_SIZE / 2 + self.radius):
+            if mapTile.collidable and ((abs(relative_pose.x) < c.TILE_SIZE / 2 + self.radius and abs(relative_pose.y) < c.TILE_SIZE / 2) or (abs(relative_pose.x) < c.TILE_SIZE / 2  and abs(relative_pose.y) < c.TILE_SIZE / 2 + self.radius)):
                 self._did_collide_wall = True;
                 self.do_collision(mapTile)
+
 
         if (self._did_collide_wall):
             self._did_collide_wall = False
@@ -481,13 +482,34 @@ class Ball(PhysicsObject):
         #print("Wall_corner")
 
         center_ball_2_center_wall = relative_pose.copy()
+
+        if( (center_ball_2_center_wall.x >= 0 and (wall_tile.top_right_corner or wall_tile.bottom_right_corner)) or \
+            (center_ball_2_center_wall.x <= 0 and (wall_tile.top_left_corner or wall_tile.bottom_left_corner)) or \
+            (center_ball_2_center_wall.y <= 0 and (wall_tile.top_left_corner or wall_tile.top_right_corner)) or \
+            (center_ball_2_center_wall.y >= 0 and (wall_tile.bottom_left_corner or wall_tile.bottom_right_corner))   ):
+            return
+
         # Offset balls
         collision_normal = center_ball_2_center_wall.copy()
 
-        offset_required = (collision_normal.magnitude() - (self.radius + c.TILE_SIZE))
+        #offset_required = (collision_normal.magnitude() - (self.radius + c.TILE_SIZE))
         collision_normal.scale_to(1)
-        self.pose += collision_normal * offset_required #THIS MIGHT BE REVERSED
+        velocity_vector = self.velocity.copy()
+        velocity_vector.scale_to(1)
+        #self.pose += velocity_vector * (offset_required * math.cos(math.atan2(velocity_vector.y-collision_normal.y, velocity_vector.x-collision_normal.x)))
+        dot_product_self_norm = -collision_normal.x * velocity_vector.x + -collision_normal.y * velocity_vector.y;
 
+        angle_vel = math.acos(dot_product_self_norm / (collision_normal.magnitude() * velocity_vector.magnitude()) )
+
+        angle_b = math.asin( (math.sin(angle_vel) / (self.radius + c.TILE_SIZE)) * center_ball_2_center_wall.magnitude() )
+        angle_c = math.pi - (angle_b + angle_vel)
+        interpolated_offset = ((self.radius + c.TILE_SIZE)/ math.sin(angle_vel)) * math.sin(angle_c)
+        #print("OFFSET :" + str(interpolated_offset) + "    angle C: " + str(math.degrees(angle_c)) + "    angle vel: " + str(math.degrees(angle_vel)))
+        self.pose -= velocity_vector * abs(interpolated_offset)
+        #self.pose += collision_normal * offset_required #THIS MIGHT BE REVERSED
+
+        #distance =
+        #collsion normal must be updated and be updated before changing pose
         # NEED TO FIND OUT WHICH WALL CORNER AND MOVE POSE APPROPRIATELY
 
         dot_product_self = collision_normal.x * self.velocity.x + collision_normal.y * self.velocity.y;
