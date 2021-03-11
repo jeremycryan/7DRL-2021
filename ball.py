@@ -402,10 +402,31 @@ class Ball(PhysicsObject):
 
         # Offset balls
         collision_normal = self.pose - other.pose
-        offset_required = (collision_normal.magnitude() - (self.radius + other.radius) ) / 1.95
+        collision_normal_unscaled = collision_normal.copy()
+        #offset_required = (collision_normal.magnitude() - (self.radius + other.radius) ) / 1.95
+        #collision_normal.scale_to(1)
+        #self.pose -= collision_normal * offset_required
+        #other.pose += collision_normal * offset_required
+
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         collision_normal.scale_to(1)
-        self.pose -= collision_normal * offset_required
-        other.pose += collision_normal * offset_required
+        velocity_vector = self.velocity.copy()
+        velocity_vector.scale_to(1)
+        # self.pose += velocity_vector * (offset_required * math.cos(math.atan2(velocity_vector.y-collision_normal.y, velocity_vector.x-collision_normal.x)))
+        dot_product_self_norm = collision_normal.x * velocity_vector.x + collision_normal.y * velocity_vector.y;
+
+        angle_vel = math.acos(dot_product_self_norm / (collision_normal.magnitude() * velocity_vector.magnitude()))
+
+        angle_b = math.asin((math.sin(angle_vel) / (self.radius + other.radius)) * collision_normal_unscaled.magnitude())
+        angle_c = math.pi - (angle_b + angle_vel)
+        interpolated_offset = ((self.radius + other.radius) / math.sin(angle_vel)) * math.sin(angle_c)
+        # print("OFFSET :" + str(interpolated_offset) + "    angle C: " + str(math.degrees(angle_c)) + "    angle vel: " + str(math.degrees(angle_vel)))
+
+        self.pose -= velocity_vector * abs(interpolated_offset) * (self.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
+        other.pose += velocity_vector * abs(interpolated_offset) * (other.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
+
+
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
         relative_velocity = self.velocity - other.velocity;
