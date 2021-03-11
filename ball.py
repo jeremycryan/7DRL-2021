@@ -526,8 +526,40 @@ class Ball(PhysicsObject):
         angle_c = math.pi - (angle_b + angle_vel)
         interpolated_offset = ((self.radius + c.TILE_SIZE)/ math.sin(angle_vel)) * math.sin(angle_c)
         #print("OFFSET :" + str(interpolated_offset) + "    angle C: " + str(math.degrees(angle_c)) + "    angle vel: " + str(math.degrees(angle_vel)))
-        self.pose -= velocity_vector * abs(interpolated_offset)
+        rewound_self_pose = self.pose - (velocity_vector * abs(interpolated_offset))
         #self.pose += collision_normal * offset_required #THIS MIGHT BE REVERSED
+        self.pose = rewound_self_pose;
+        ##
+        relative_rewound_pose = (self.map_coordinate_to_pose(wall_tile) - rewound_self_pose)
+
+        if (wall_tile.top_left_corner):
+            temp_pose = relative_rewound_pose.copy()
+            temp_pose.x += c.TILE_SIZE / 2
+            temp_pose.y += c.TILE_SIZE / 2
+        elif (wall_tile.top_right_corner):
+            temp_pose = relative_rewound_pose.copy()
+            temp_pose.x -= c.TILE_SIZE / 2
+            temp_pose.y += c.TILE_SIZE / 2
+        elif (wall_tile.bottom_left_corner):
+            temp_pose = relative_rewound_pose.copy()
+            temp_pose.x += c.TILE_SIZE / 2
+            temp_pose.y -= c.TILE_SIZE / 2
+        elif (wall_tile.bottom_right_corner):
+            temp_pose = relative_rewound_pose.copy()
+            temp_pose.x -= c.TILE_SIZE / 2
+            temp_pose.y -= c.TILE_SIZE / 2
+
+        if ((temp_pose.x >= 0 and (wall_tile.top_right_corner or wall_tile.bottom_right_corner)) or \
+                (temp_pose.x <= 0 and (wall_tile.top_left_corner or wall_tile.bottom_left_corner)) or \
+                (temp_pose.y <= 0 and (wall_tile.top_left_corner or wall_tile.top_right_corner)) or \
+                (temp_pose.y >= 0 and (wall_tile.bottom_left_corner or wall_tile.bottom_right_corner))):
+            #DO WALL SEARCH HERE
+            temp_pose = self.round_to_map_coordinate(temp_pose)
+            newTile = self.game.current_scene.current_room().get_at(temp_pose.x, temp_pose.y)
+            if not (newTile.top_right_corner or newTile.top_left_corner or newTile.bottom_right_corner or newTile.bottom_left_corner):
+                self.do_collision(newTile)
+                return()
+
 
         #distance =
         #collsion normal must be updated and be updated before changing pose
