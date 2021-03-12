@@ -15,3 +15,12 @@ class OneBall(Ball):
         self.back_surface.fill((50, 80, 255))
         self.back_surface = pygame.image.load(c.image_path(f"1_ball.png"))
 
+class ExampleBall(Ball):
+    def __init__(self, *args, **kwargs):
+        self.do_things_before_init()
+        super().__init__(*args, **kwargs)
+        self.radius = 90
+        
+    def do_things_before_init(self):
+        #put code here
+        pass
