@@ -5,7 +5,7 @@ from copy import copy
 
 from primitives import PhysicsObject, Pose
 import constants as c
-from particle import Spark, SmokeBit, PoofBit
+from particle import Spark, SmokeBit, PoofBit, BubbleBurst
 import random
 from cue import BasicCue
 import time
@@ -633,6 +633,9 @@ class Ball(PhysicsObject):
         self.velocity = (self_relative_velocity + other.velocity) ;
         other.velocity = (other_relative_velocity*-1 + other.velocity) ;
 
+        self.on_collide(other)
+        other.on_being_hit(self)
+
     def collide_with_wall_corner(self, wall_pose, wall_tile):
 
         # Offset balls
@@ -1080,6 +1083,13 @@ class Ball(PhysicsObject):
         if(self.velocity.magnitude() + other.velocity.magnitude()) != 0:
             self.pose -= velocity_vector * abs(interpolated_offset) * (self.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
             #other.pose += velocity_vector * abs(interpolated_offset) * (other.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
+    def on_collide(self, other):
+        """ Called immediately after a collision """
+        pass
+
+    def on_being_hit(self, other):
+        """ Called immediately after this ball was hit"""
+        pass
 
 
 class Shelled(Ball):
@@ -1097,14 +1107,24 @@ class Shelled(Ball):
         self.twinkle_surf.fill(c.BLACK)
         pygame.draw.circle(self.twinkle_surf, c.WHITE, (self.radius*1.4, self.radius*0.55), self.radius*0.25)
         pygame.draw.circle(self.twinkle_surf, c.WHITE, (self.radius * 1.7, self.radius * 0.7), self.radius * 0.1)
+        self.sheen = pygame.Surface((self.radius*2, self.radius*2))
+        self.sheen.fill(c.MAGENTA)
+        pygame.draw.circle(self.sheen, c.WHITE, (self.radius, self.radius), self.radius)
+        self.sheen.set_colorkey(c.MAGENTA)
+        self.sheen.set_alpha(0)
+        self.sheen_alpha = 0
         self.twinkle_surf.set_alpha(100)
         self.twinkle_surf.set_colorkey(c.BLACK)
         self.broken = False
         self.can_be_sunk = False
+        self.last_velocity = self.velocity.copy()
 
     def update(self, dt, events):
+        self.last_velocity = self.velocity.copy()
         super().update(dt, events)
         self.inner_ball.pose = self.pose.copy()
+        self.sheen_alpha -= 1500*dt
+        self.sheen_alpha = max(0, self.sheen_alpha)
 
 
     def draw(self, surf, offset=(0, 0)):
@@ -1122,8 +1142,33 @@ class Shelled(Ball):
         tx = 1 * math.sin(diff.x/7)
         ty = 1 * math.cos(diff.y/7)
         surf.blit(self.twinkle_surf, (x + tx, y + ty))
+        self.sheen.set_alpha(self.sheen_alpha)
+        surf.blit(self.sheen, (x, y))
 
     def draw_shadow(self, screen, offset=(0, 0)):
         offset = (offset[0], offset[1] + self.inner_ball.radius*0.25)
         self.inner_ball.draw_shadow(screen, offset=offset)
 
+    def on_being_hit(self, other):
+        if not self.turn_in_progress:
+            self.sheen_alpha = 150
+            if (self.velocity - self.last_velocity).magnitude() > 200:
+                self.shatter()
+
+    def shatter(self):
+        for i, ball in enumerate(self.game.current_scene.balls):
+            if ball is self:
+                self.game.current_scene.balls[i] = self.inner_ball
+                self.inner_ball.outline_hidden = False
+                self.inner_ball.turn_phase = self.turn_phase
+                self.inner_ball.turn_in_progress = self.turn_in_progress
+                self.inner_ball.velocity = self.velocity.copy()
+                self.large_spark_explosion(self.pose.get_position())
+                self.game.current_scene.shake(25)
+                break
+
+    def large_spark_explosion(self, position, intensity=1.5):
+        self.game.current_scene.particles.append(BubbleBurst(self.game, *position))
+        for i in range(20):
+            spark = Spark(self.game, *position, intensity=intensity)
+            self.game.current_scene.particles.append(spark)
