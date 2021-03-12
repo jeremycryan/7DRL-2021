@@ -45,6 +45,7 @@ class Ball(PhysicsObject):
         self.pointer = pygame.image.load(c.image_path("pointer.png"))
         self.pointer.set_colorkey(c.BLACK)
         self.has_poofed = False
+        self.cue = BasicCue()
 
     def start_turn(self):
         self.turn_in_progress = True
@@ -118,7 +119,7 @@ class Ball(PhysicsObject):
         #print(goal_offset_angle)
 
 
-        self.knock(BasicCue(), to_player_degrees - goal_offset_angle, 120)
+        self.knock(self.cue, to_player_degrees - goal_offset_angle, 120)
         #MAYBE MAKE 3 DIIFRENT VERSIONS AND HAVE EACH BALL PICK ONE?
 
         #THE ABOVE IS ESENTIALLY ANGLE CORRECTION CODE, WE CAN USE THIS WHEN CALUCLATING WALL BOUNCES...
@@ -501,7 +502,6 @@ class Ball(PhysicsObject):
         return(Pose(((mapTile.x * c.TILE_SIZE) + c.TILE_SIZE/2, mapTile.y * c.TILE_SIZE + c.TILE_SIZE/2 ) ,0)) #offset by tilezise /2 to get center
 
     def collide_with_other_ball_2(self, other):
-
 
         # Offset balls
         collision_normal = self.pose - other.pose
