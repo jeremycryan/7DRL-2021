@@ -1,13 +1,13 @@
 
 XXXXXXXXXUUXXXXXXXXX
-X..PXXXXXUUXXXXXP..X
+XX.PXXXXXUUXXXXXP.XX
 X...XXXXXUUXXXXX...X
-X..................X
-X..................X
+XX................XX
+XX................XX
 L..................R
 L..................R
-X..................X
-X..................X
+XX................XX
+XX................xX
 X...XXXXXDDXXXXX...X
-X..PXXXXXDDXXXXXP..X
+XX.PXXXXXDDXXXXXP.XX
 XXXXXXXXXDDXXXXXXXXX
