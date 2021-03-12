@@ -929,6 +929,7 @@ class Shelled(Ball):
         self.broken = False
         self.can_be_sunk = False
         self.last_velocity = self.velocity.copy()
+        self.take_turn = lambda *args: type(self.inner_ball).take_turn(self, *args)
 
     def update(self, dt, events):
         self.last_velocity = self.velocity.copy()

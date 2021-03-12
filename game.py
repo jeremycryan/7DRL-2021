@@ -37,8 +37,8 @@ class Game:
         self.ball_hit_3b = pygame.mixer.Sound(c.sound_path("balls hit 3(b).wav"))
         self.ball_hit_3c = pygame.mixer.Sound(c.sound_path("balls hit 3(c).wav"))
 
-        self.exploring = pygame.mixer.Sound(c.sound_path("music_idea_7_electro_swing_quiet.mp3"))
-        self.combat = pygame.mixer.Sound(c.sound_path("music_idea_7_electro_swing.mp3"))
+        self.exploring = pygame.mixer.Sound(c.sound_path("exploring.mp3"))
+        self.combat = pygame.mixer.Sound(c.sound_path("combat.mp3"))
 
     def balls_hit(self, intensity):
         if intensity == 1:
