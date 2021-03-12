@@ -242,8 +242,8 @@ class Room(GameObject):
         return self.tiles[y][x]
 
     def coordinate_collidable(self, x, y):
-        x += self.x * c.ROOM_WIDTH_TILES
-        y += self.y * c.ROOM_HEIGHT_TILES
+        x -= self.x * c.ROOM_WIDTH_TILES
+        y -= self.y * c.ROOM_HEIGHT_TILES
         if x < 0 or y < 0 or x > len(self.tiles[0]) - 1 or y > len(self.tiles) - 1:
             return False
         temp_tile = self.tiles[int(y)][int(x)]

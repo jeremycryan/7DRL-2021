@@ -50,6 +50,7 @@ class Ball(PhysicsObject):
         self.cue = BasicCue()
         self.has_collided = False
         self.collided_with = None
+        self.is_simulating = False
 
 
     def start_turn(self):
@@ -84,14 +85,15 @@ class Ball(PhysicsObject):
             # is_wall = test_tile.collidable
 
             is_wall_2 = current_room.coordinate_collidable(to_test_pose.x, to_test_pose.y)
-            bank_shot = is_wall_2
             if(is_wall_2):
-                print("FOUND WALL")
+                 print("FOUND WALL   CURRENT STEP = " + str(current_step/(c.TILE_SIZE / 2)))
+            # else:
+            #     print("blatg")
 
             current_step += c.TILE_SIZE / 2
+        bank_shot = is_wall_2
 
-
-##########################################CHECK IF TO PLAYER PATH IS BLOCKED BY WALLS
+        ##########################################CHECK IF TO PLAYER PATH IS BLOCKED BY WALLS
 
 
         #ORDERS POCKETS BY LESS ANGLE NEEDED
@@ -100,7 +102,7 @@ class Ball(PhysicsObject):
         if(not bank_shot):
             pockets = current_room.pockets
             pockets.sort(key=lambda pocket: abs(math.degrees(math.atan2(player.pose.y - pocket.pose.y, -player.pose.x + pocket.pose.x)) - to_player_degrees)   )
-            pockets = list(filter(lambda pocket: abs(math.degrees(math.atan2(player.pose.y - pocket.pose.y, -player.pose.x + pocket.pose.x)) - to_player_degrees) < 60, pockets))
+            pockets = list(filter(lambda pocket: abs(math.degrees(math.atan2(player.pose.y - pocket.pose.y, -player.pose.x + pocket.pose.x)) - to_player_degrees) < c.AI_MAX_DEFLECTION_ANGLE_ATTEMPTED, pockets))
         #rounded_to_map_player_pose  = self.round_to_map_coordinate(player.pose)
 
         #CHECK IF POCKET IS VALID (WALLS) HERE
@@ -135,11 +137,11 @@ class Ball(PhysicsObject):
                 #is_wall = test_tile.collidable
 
                 is_wall = current_room.coordinate_collidable(to_test_pose.x, to_test_pose.y)
-                found_pocket = not is_wall
-                #if(is_wall):
-                    #print("FOUND WALL")
+                if(is_wall):
+                    print("FOUND WALL (PLAYER TO POCKET)   CURRENT STEP = " + str(current_step / (c.TILE_SIZE/2)))
 
                 current_step += c.TILE_SIZE/2
+            found_pocket = not is_wall
 
         #print("DESIRED POCKET NUMBER " + str(desired_pocket))
 
@@ -159,40 +161,53 @@ class Ball(PhysicsObject):
             #print(goal_offset_angle)
 
             rando_factor = (.4*random.random() + .8)
-            power = (rando_factor) * (relative_position_player_to_pocket.magnitude() + relative_position.magnitude()) * .1
-            if(power> 120):
-                power = 120
+            _angle_for_pow = abs(math.degrees(math.atan2(player.pose.y - pockets[desired_pocket].pose.y, -player.pose.x + pockets[desired_pocket].pose.x)) - to_player_degrees)
+            power = (rando_factor) * ( ((relative_position_player_to_pocket.magnitude() + relative_position.magnitude()) * .2) ) * (90/(90-_angle_for_pow))**.5
+            #print((relative_position_player_to_pocket.magnitude() + relative_position.magnitude())*.2)
+            #print(power/rando_factor)
+            if(power> 100):
+                power = 100
             if(power< rando_factor * 20):
                 power = rando_factor * 20
             self.knock(self.cue, to_player_degrees - goal_offset_angle, power)
         else:
             prediction_line_count = 100
-            rando_factor = 1 #(.4*random.random() + .8)
+            rando_factor = (.4*random.random() + .8)
             print("BRUTE FORCE TIME")
             shot_options = []
             for i in range(0,prediction_line_count-1):
-                result = self.do_prediction_line( (360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*100)
+                _hold_pose = self.pose
+                _hold_velocity = self.velocity
+                self.is_simulating = True
+                result = self.do_prediction_line( (360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*50)
+                self.tractor_beam_target = None
+                self.can_collide = True
+                self.is_simulating = False
+                self.pose = _hold_pose
+                self.velocity = _hold_velocity
+                #.has_collided = True
                 if result==0:
                     result= 0.01
 
                 #print(type(result))
                 if(type(result) is float):
-                    shot_options.append( ((360/prediction_line_count)*i + (360/8)*prediction_line_count, rando_factor*100, result) )
+                    shot_options.append( ((360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*100, result) )
                 else:
-                    shot_options.append( ((360/prediction_line_count)*i + (360/8)*prediction_line_count, rando_factor*100, result - player.pose) )
+                    shot_options.append( ((360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*100, (result - player.pose)) )
 
-                if type(shot_options[i][2]) is float:
-                    print("FLOAT OUTPUT: "+ str(shot_options[i][2]))
-                    pass
-                if type(shot_options[i][2]) is Pose:
-                    #shot_options[i][2] -= player.pose
-                    #print("MAG " + str(shot_options[i][2].magnitude()))
-                    pass
+                # if type(shot_options[i][2]) is float:
+                #     print("FLOAT OUTPUT: "+ str(shot_options[i][2]))
+                #     pass
+                # if type(shot_options[i][2]) is Pose:
+                #     #shot_options[i][2] -= player.pose
+                #     #print("MAG " + str(shot_options[i][2].magnitude()))
+                #     pass
 
             shot_options.sort(key = lambda x: x[2] - 10000 if type(x[2]) is float else x[2].magnitude())
+            print("CHOSEN TYPE: " + str(type(shot_options[0][2])))
             # if type(shot_options[0][2]) is float:
             #     print("HIT IT! BRUTE FORCED!")
-            self.knock(self.cue, shot_options[0][0], -shot_options[0][1])
+            self.knock(self.cue, shot_options[0][0], shot_options[0][1])
 
         self.turn_phase = c.AFTER_HIT
 
@@ -261,7 +276,7 @@ class Ball(PhysicsObject):
             diff = self.tractor_beam_target - self.pose
             self.pose += diff*dt * 5
 
-            if (self.tractor_beam_target - self.pose).magnitude() < 2:
+            if (self.tractor_beam_target - self.pose).magnitude() < 2 and not self.is_simulating:
                 if self.target_alpha < self.alpha:
                     self.alpha -= 250*dt
                 if self.target_scale < self.scale:
@@ -380,8 +395,10 @@ class Ball(PhysicsObject):
                 self.collide_with_other_ball_2(ball)
                 #ball.collide_with_other_ball_2(self)
                 break
-
+        #print("update  # mapTiles: ")
         for mapTile in mapTiles: #CORNERS FIRST
+            # if(mapTile.key != "."):
+            #     print("MAP: " + str(mapTile.key))
 
             if not (mapTile.top_right_corner or mapTile.top_left_corner or mapTile.bottom_right_corner or mapTile.bottom_left_corner):
                 continue
@@ -491,7 +508,7 @@ class Ball(PhysicsObject):
             if(wall_tile_checker!=False):
                 if(wall_tile_checker.top_right_corner or wall_tile_checker.top_left_corner or wall_tile_checker.bottom_right_corner or wall_tile_checker.bottom_left_corner) and wall_tile_checker.collidable:
                     relative_pose = (self.map_coordinate_to_pose(wall_tile_checker) - self.pose)
-                    print("SENDING TO CORNER CODE!")
+                    #print("SENDING TO CORNER CODE!")
                     if wall_tile_checker.collidable and (abs(relative_pose.x) < c.TILE_SIZE / 2 + self.radius and abs(relative_pose.y) < c.TILE_SIZE / 2 + self.radius):
                         if(mapTile.top_left_corner):
                             temp_pose = relative_pose.copy()
@@ -960,7 +977,11 @@ class Ball(PhysicsObject):
         #     return
 
         self.game.in_simulation = True
-        player_copy = copy(self)
+        self.has_collided = False
+        self.collided_with = None
+        #player_copy = copy(self)
+        player_copy = self
+
         player_copy.pose = self.pose.copy()
         player_copy.velocity = self.velocity.copy()
         player_copy.collide_with_other_ball_2 = player_copy.mock_collision
@@ -972,50 +993,59 @@ class Ball(PhysicsObject):
         positions = []
         old = player_copy.pose.copy()
         final_position = None
-        for i in range(1200):
-
+        #print("SIM START    VEL MAG: " + str(player_copy.velocity.magnitude()) )
+        for i in range(c.AI_SIM_ITERATIONS):
+            #print("SIM VEL MAG: " + str(player_copy.velocity.magnitude()))
             if(c.VARIABLE_SIM_SPEED):
                 near_wall = False
-                if(c.SIM_NEAR_WALL_STEP_REDUCTION != 1):
-                    mapTiles = self.game.current_scene.map.tiles_near(player_copy.pose, player_copy.radius + c.SIM_MOVEMENT);
+                if(c.AI_SIM_NEAR_WALL_STEP_REDUCTION != 1):
+                    mapTiles = self.game.current_scene.map.tiles_near(player_copy.pose, player_copy.radius + c.AI_SIM_MOVEMENT);
                     for mapTile in mapTiles:
                         if(mapTile.collidable):
                             near_wall = True
                             break
                 if near_wall and player_copy.velocity.magnitude() >3:
-                    sim_update = ((c.SIM_MOVEMENT) / player_copy.velocity.magnitude() / c.SIM_NEAR_WALL_STEP_REDUCTION)
+                    sim_update = ((c.AI_SIM_MOVEMENT) / player_copy.velocity.magnitude() / c.AI_SIM_NEAR_WALL_STEP_REDUCTION)
                 elif player_copy.velocity.magnitude() > 1:
-                    sim_update = ((c.SIM_MOVEMENT)/player_copy.velocity.magnitude())
+                    sim_update = ((c.AI_SIM_MOVEMENT)/player_copy.velocity.magnitude())
                 else:
                     final_position = player_copy.pose.copy()
                     break
-                    sim_update = 1 / (c.SIM_MIN_FPS)
-                if(sim_update> 1 / (c.SIM_MIN_FPS)):
-                    sim_update = 1 / (c.SIM_MIN_FPS)
+                    sim_update = 1 / (c.AI_SIM_MIN_FPS)
+                if(sim_update> 1 / (c.AI_SIM_MIN_FPS)):
+                    sim_update = 1 / (c.AI_SIM_MIN_FPS)
                 #mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius + );
             else:
-                sim_update = 1 / (c.SIM_FPS)
+                sim_update = 1 / (c.AI_SIM_FPS)
 
-            player_copy.update(sim_update, [])
-            positions.append(player_copy.pose.copy())
+            self.update(sim_update, [])
+            #positions.append(player_copy.pose.copy())
             if player_copy.has_collided:
+                #print("SIM COLLIDED")
                 final_position = player_copy.pose.copy()
                 break
             if player_copy.velocity.magnitude() < 1:
+                #print("SIM VEL 0")
                 final_position = player_copy.pose.copy()
                 break
             if player_copy.sunk:
+                #print("SIM SUNK")
                 final_position = Pose((999999,999999), 0)
                 break
 
             new = player_copy.pose.copy()
             traveled += (new - old).magnitude()
             old = new
-            if traveled > 1200:
+            if traveled > c.AI_SIM_MAX_DIST:
                 final_position = player_copy.pose.copy()
+                print("SIM DISTANCE TIMEOUT    VELOCITY MAG: " + str(player_copy.velocity.magnitude()))
                 break
 
-        print((self.pose - final_position).magnitude())
+        if(final_position == None):
+            #print("SIM ITERATIONS MAXED")
+            final_position = player_copy.pose.copy()
+
+        #print((self.pose - final_position.pose).magnitude())
 
         #print("TRAVELD :" + str(traveled))
 
@@ -1034,7 +1064,7 @@ class Ball(PhysicsObject):
             other = player_copy.collided_with
             to_other = other.pose - player_copy.pose
             #angle = math.degrees(-math.atan2(to_other.y, to_other.x))
-            print("TRAVLED: "+str(traveled))
+            #print("SIM RETURN TRAVELED (A HIT HAPPENED): "+str(traveled))
             self.game.in_simulation = False
 
 
@@ -1042,14 +1072,16 @@ class Ball(PhysicsObject):
             return(traveled)
 
         self.game.in_simulation = False
+        #print("SIM RETURN LAST")
         return(final_position)
 
     def mock_collision(self, other): #ONLY FOR MOCK BALL COLLISIONS
         #print("hit something? " + str(other.back_surface.get_at((0,0))) + " " + str(self.back_surface.get_at((0,0))))
 
+        #print("COLLISON")
         if self.has_collided or not other.is_player:
             return
-        print("YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY")
+        #print("YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY")
         self.has_collided = True
         self.collided_with = other
 
