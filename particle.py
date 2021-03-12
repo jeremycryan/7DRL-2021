@@ -180,3 +180,53 @@ class BubbleBurst(Particle):
         surf.fill(c.BLACK)
         pygame.draw.circle(surf, self.color(), (int(radius), int(radius)), int(radius))
         surface.blit(surf, (self.pose.x + offset[0] - surf.get_width()//2, self.pose.y + offset[1] - surf.get_height()//2), special_flags=pygame.BLEND_ADD)
+
+
+class PreBall(Particle):
+    def __init__(self, game, ball):
+        super().__init__(game)
+        self.ball = ball
+        self.pose = self.ball.pose.copy()
+        self.grow_time = 0.3
+        self.drop_time = 0.4
+        self.duration = self.grow_time + self.drop_time
+
+    def destroy(self):
+        super().destroy()
+        self.game.current_scene.balls.append(self.ball)
+        self.ball.make_poof()
+
+    def get_scale(self):
+        if self.age > self.grow_time:
+            return 1
+        else:
+            return (self.age / self.grow_time)**0.7
+
+    def get_alpha(self):
+        if self.age < self.grow_time:
+            return 255
+        else:
+            return (1 - (self.age - self.grow_time)/(self.duration - self.grow_time))*255
+
+    def get_height(self):
+        max_height = 25
+        if self.age < self.grow_time:
+            return max_height
+        else:
+            return (1 - ((self.age - self.grow_time)/(self.duration - self.grow_time))**4) * max_height
+
+    def draw(self, surf, offset=(0, 0)):
+        r = self.ball.radius * self.get_scale()
+        orb = pygame.Surface((r*2, r*2))
+        orb.fill(c.BLACK)
+        orb.set_colorkey(c.BLACK)
+        pygame.draw.circle(orb, c.WHITE, (r, r), r)
+        orb.set_alpha(self.get_alpha())
+
+        x = self.pose.x + offset[0]
+        y = self.pose.y + offset[1]
+        if self.age > self.grow_time:
+            self.ball.draw(surf, (offset[0], offset[1] - self.get_height()))
+
+        surf.blit(orb, (x - orb.get_width()//2, y - orb.get_height()//2 - self.get_height()))
+

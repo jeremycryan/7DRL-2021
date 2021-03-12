@@ -82,6 +82,8 @@ AI_SIM_MOVEMENT= 60
 AI_SIM_MIN_FPS = 3
 AI_SIM_NEAR_WALL_STEP_REDUCTION=1
 
+BPM = 112
+
 def dprint(thing):
     if DEBUG:
         print(thing)

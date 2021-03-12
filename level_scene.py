@@ -6,6 +6,7 @@ from camera import Camera
 import pygame
 import constants as c
 from ball_types import *
+from particle import PreBall
 
 
 class LevelScene(Scene):
@@ -33,6 +34,8 @@ class LevelScene(Scene):
             self.camera.shake(amt, pose)
 
     def update_current_ball(self):
+        if self.balls_are_spawning():
+            return
         if not self.current_ball.turn_in_progress:
             if self.force_player_next:
                 self.current_ball = self.player
@@ -43,6 +46,8 @@ class LevelScene(Scene):
             self.current_ball.start_turn()
 
     def no_enemies(self):
+        if self.balls_are_spawning():
+            return False
         for ball in self.balls:
             if ball is not self.player:
                 return False
@@ -94,9 +99,16 @@ class LevelScene(Scene):
         for particle in self.particles:
             particle.draw(surface, offset=offset)
 
+    def balls_are_spawning(self):
+        for particle in self.particles:
+            if isinstance(particle, PreBall):
+                return True
+        return False
+
     def spawn_balls(self):
         offset = self.current_room().center()
-        self.balls += [Ball(self.game, offset[0] - 200, offset[1] - 140)]
+        #self.balls += [Ball(self.game, offset[0] - 200, offset[1] - 140)]
+        self.particles += [PreBall(self.game, Ball(self.game, offset[0] - 200, offset[1] - 140))]
         self.force_player_next = True
         self.game.combat.set_volume(100)
         self.game.exploring.set_volume(0)

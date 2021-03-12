@@ -964,6 +964,8 @@ class Ball(PhysicsObject):
         self.can_collide = False
         self.target_alpha = 0
         self.target_scale = 0.5
+        if not self.is_player:
+            self.game.current_scene.force_player_next = True
 
     def sink_for_real(self):
         self.sunk = True
