@@ -5,6 +5,7 @@ import pygame
 from primitives import GameObject, Pose
 import constants as c
 from pocket import Pocket
+from particle import WallAppear
 
 
 class Map(GameObject):
@@ -349,10 +350,16 @@ class Tile(GameObject):
         pass
 
     def doors_close(self):
+        was_collidable = self.collidable
         if self.key in [c.UP_WALL, c.DOWN_WALL, c.LEFT_WALL, c.RIGHT_WALL]:
             self.collidable = True
+        if not was_collidable and self.collidable:
+            for i in range(20):
+                self.game.current_scene.particles.append(WallAppear(self.game, (self.x+0.5)*c.TILE_SIZE, (self.y+0.5)*c.TILE_SIZE))
 
     def doors_open(self):
+        was_collidable = self.collidable
+
         if not self.parent:
             if self.key in [c.UP_WALL, c.DOWN_WALL, c.LEFT_WALL, c.RIGHT_WALL]:
                 self.collidable = False
@@ -367,6 +374,10 @@ class Tile(GameObject):
             self.collidable = False
         elif self.key==c.LEFT_WALL and c.LEFT in openings:
             self.collidable = False
+
+        if was_collidable and not self.collidable and self.game.current_scene:
+            for i in range(20):
+                self.game.current_scene.particles.append(WallAppear(self.game, (self.x+0.5)*c.TILE_SIZE, (self.y+0.5)*c.TILE_SIZE))
 
     def generate_surface(self):
         self.surface = pygame.Surface((c.TILE_SIZE, c.TILE_SIZE))

@@ -32,15 +32,15 @@ class Player(Ball):
 
         super().update(dt, events)
 
-        current_room = self.game.current_scene.current_room()
+        current_room = self.game.current_scene.current_room() #TODO make this check fake player in simulation
+        if self.is_completely_in_room() and not current_room.enemies_have_spawned:
+            self.velocity *= 0.03**dt
         if not self.game.in_simulation:
-            print(self.is_completely_in_room(), not current_room.enemies_have_spawned, self.game.current_scene.all_balls_below_speed())
-        if self.is_completely_in_room() and not current_room.enemies_have_spawned and self.game.current_scene.all_balls_below_speed():
-            print("in room")
-            current_room.doors_close()
-            current_room.spawn_enemies()
-        elif current_room.enemies_have_spawned and not current_room.doors_are_open and self.game.current_scene.no_enemies():
-            current_room.doors_open()
+            if self.is_completely_in_room() and not current_room.enemies_have_spawned and self.game.current_scene.all_balls_below_speed():
+                current_room.doors_close()
+                current_room.spawn_enemies()
+            elif current_room.enemies_have_spawned and not current_room.doors_are_open and self.game.current_scene.no_enemies():
+                current_room.doors_open()
 
     def take_turn(self):
         pass
