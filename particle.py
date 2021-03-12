@@ -58,6 +58,8 @@ class Spark(Particle):
         self.velocity *= 0.05**dt
 
     def draw(self, surface, offset=(0, 0)):
+        if self.pose.x + offset[0] < -100 or self.pose.x + offset[0] > c.WINDOW_WIDTH + 100 or self.pose.y + offset[1] < -100 or self.pose.y + offset[1] > c.WINDOW_HEIGHT + 100:
+            return
         stretch = self.velocity.magnitude()/50 + 1
         surf = pygame.Surface((int(self.radius * stretch * self.get_scale()), self.radius * self.get_scale()))
         surf.fill(c.BLACK)
@@ -154,3 +156,27 @@ class WallAppear(PoofBit):
         radius = self.radius * self.get_scale()
         color = (c.BLACK)
         pygame.draw.circle(surf, color, (x, y), radius)
+
+class BubbleBurst(Particle):
+    def __init__(self, game, x, y, radius=90):
+        super().__init__(game)
+        self.pose = Pose((x, y), 0)
+        self.radius = radius
+        self.duration = 0.25
+
+    def get_scale(self):
+        return 1+self.through(1.5)/2
+
+    def get_alpha(self):
+        return (1 - self.through(2))
+
+    def color(self):
+        each = int(255 - 255*self.through(2))
+        return each, each, each
+
+    def draw(self, surface, offset=(0, 0)):
+        radius = self.radius * self.get_scale()
+        surf = pygame.Surface((int(radius*2), int(radius*2)))
+        surf.fill(c.BLACK)
+        pygame.draw.circle(surf, self.color(), (int(radius), int(radius)), int(radius))
+        surface.blit(surf, (self.pose.x + offset[0] - surf.get_width()//2, self.pose.y + offset[1] - surf.get_height()//2), special_flags=pygame.BLEND_ADD)
