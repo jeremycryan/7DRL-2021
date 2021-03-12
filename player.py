@@ -170,13 +170,26 @@ class Player(Ball):
         # self.pose += velocity_vector * (offset_required * math.cos(math.atan2(velocity_vector.y-collision_normal.y, velocity_vector.x-collision_normal.x)))
         dot_product_self_norm = collision_normal.x * velocity_vector.x + collision_normal.y * velocity_vector.y;
 
-        angle_vel = math.acos(dot_product_self_norm / (collision_normal.magnitude() * velocity_vector.magnitude()))
+        if((collision_normal.magnitude() * velocity_vector.magnitude()) != 0):
+            acos_input = dot_product_self_norm / (collision_normal.magnitude() * velocity_vector.magnitude())
+            if(acos_input>1):
+                acos_input = 1
+            if(acos_input<-1):
+                acos_input = -1
+            angle_vel = math.acos(acos_input)
+        else:
+            angle_vel = 1
 
         angle_b = math.asin((math.sin(angle_vel) / (self.radius + other.radius)) * collision_normal_unscaled.magnitude())
         angle_c = math.pi - (angle_b + angle_vel)
+
+        if(math.sin(angle_vel)== 0):
+            angle_vel = 1
         interpolated_offset = ((self.radius + other.radius) / math.sin(angle_vel)) * math.sin(angle_c)
         # print("OFFSET :" + str(interpolated_offset) + "    angle C: " + str(math.degrees(angle_c)) + "    angle vel: " + str(math.degrees(angle_vel)))
 
         if(self.velocity.magnitude() + other.velocity.magnitude()) != 0:
             self.pose -= velocity_vector * abs(interpolated_offset) * (self.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
             #other.pose += velocity_vector * abs(interpolated_offset) * (other.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
+
+

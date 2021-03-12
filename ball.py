@@ -1,5 +1,7 @@
 import pygame
 import math
+from copy import copy
+
 
 from primitives import PhysicsObject, Pose
 import constants as c
@@ -46,6 +48,9 @@ class Ball(PhysicsObject):
         self.pointer.set_colorkey(c.BLACK)
         self.has_poofed = False
         self.cue = BasicCue()
+        self.has_collided = False
+        self.collided_with = None
+
 
     def start_turn(self):
         self.turn_in_progress = True
@@ -59,23 +64,56 @@ class Ball(PhysicsObject):
         to_player_degrees = math.degrees(math.atan2(relative_position.y, -relative_position.x))
         max_offset_angle = math.degrees(math.sin( (self.radius + player.radius )/ relative_position.magnitude()) )
         relative_player_max_movement_angle = 90 - max_offset_angle
-
         current_room = self.game.current_scene.current_room();
-        pockets = current_room.pockets
+
+        ######################################
+
+        relative_position_player_to_pocket = self.pose - player.pose
+        _scanner = relative_position_player_to_pocket.copy()
+        _scanner *= -1
+        _scanner.scale_to(1)
+
+        bank_shot = True
+        current_step = 0
+        is_wall_2 = False
+        while current_step < relative_position_player_to_pocket.magnitude() - c.TILE_SIZE and not is_wall_2:
+            to_test_pose = self.pose + (_scanner * current_step)
+            to_test_pose = self.round_to_map_coordinate(to_test_pose)
+
+            # test_tile = self.game.current_scene.map.coordinate_collidable(to_test_pose.x, to_test_pose.y)
+            # is_wall = test_tile.collidable
+
+            is_wall_2 = current_room.coordinate_collidable(to_test_pose.x, to_test_pose.y)
+            bank_shot = is_wall_2
+            if(is_wall_2):
+                print("FOUND WALL")
+
+            current_step += c.TILE_SIZE / 2
+
+
+##########################################CHECK IF TO PLAYER PATH IS BLOCKED BY WALLS
+
 
         #ORDERS POCKETS BY LESS ANGLE NEEDED
         #pockets.sort(key=lambda pocket: abs(math.degrees(math.atan2(player.pose.x - pocket.pose.x, player.pose.y - pocket.pose.y)) - to_player_degrees)   )
-        pockets.sort(key=lambda pocket: abs(math.degrees(math.atan2(player.pose.y - pocket.pose.y, -player.pose.x + pocket.pose.x)) - to_player_degrees)   )
 
+        if(not bank_shot):
+            pockets = current_room.pockets
+            pockets.sort(key=lambda pocket: abs(math.degrees(math.atan2(player.pose.y - pocket.pose.y, -player.pose.x + pocket.pose.x)) - to_player_degrees)   )
+            pockets = list(filter(lambda pocket: abs(math.degrees(math.atan2(player.pose.y - pocket.pose.y, -player.pose.x + pocket.pose.x)) - to_player_degrees) < 60, pockets))
         #rounded_to_map_player_pose  = self.round_to_map_coordinate(player.pose)
 
         #CHECK IF POCKET IS VALID (WALLS) HERE
+
 
         is_wall = True
         found_pocket = False
         desired_pocket = -1
         wall_check_success = True;
-        while is_wall:
+
+        if(bank_shot):
+            print("BANK SHOT")
+        while is_wall and not bank_shot:
             desired_pocket += 1
             if desired_pocket>= len(pockets):
                 wall_check_success = False
@@ -97,6 +135,7 @@ class Ball(PhysicsObject):
                 #is_wall = test_tile.collidable
 
                 is_wall = current_room.coordinate_collidable(to_test_pose.x, to_test_pose.y)
+                found_pocket = not is_wall
                 #if(is_wall):
                     #print("FOUND WALL")
 
@@ -104,34 +143,56 @@ class Ball(PhysicsObject):
 
         #print("DESIRED POCKET NUMBER " + str(desired_pocket))
 
-        goal_pocket_angle =  math.degrees(math.atan2(relative_position_player_to_pocket.y, -relative_position_player_to_pocket.x))
+        if(found_pocket):
+            goal_pocket_angle =  math.degrees(math.atan2(relative_position_player_to_pocket.y, -relative_position_player_to_pocket.x))
 
-        goal_pocket_angle = goal_pocket_angle - to_player_degrees;
+            goal_pocket_angle = goal_pocket_angle - to_player_degrees;
 
-        internal_triangle_height = math.sin(math.radians(goal_pocket_angle)) * (self.radius + player.radius)
-        goal_offset_angle = math.degrees(math.atan2(internal_triangle_height, relative_position.magnitude() - math.cos(math.radians(goal_pocket_angle)) * (self.radius + player.radius)) )
+            internal_triangle_height = math.sin(math.radians(goal_pocket_angle)) * (self.radius + player.radius)
+            goal_offset_angle = math.degrees(math.atan2(internal_triangle_height, relative_position.magnitude() - math.cos(math.radians(goal_pocket_angle)) * (self.radius + player.radius)) )
 
-        if(goal_offset_angle> c.AI_MAX_ANGLE_REDUCTION):
-            goal_offset_angle = c.AI_MAX_ANGLE_REDUCTION
-        elif(goal_offset_angle< -c.AI_MAX_ANGLE_REDUCTION):
-            goal_offset_angle = -c.AI_MAX_ANGLE_REDUCTION
+            if(goal_offset_angle> c.AI_MAX_ANGLE_REDUCTION):
+                goal_offset_angle = c.AI_MAX_ANGLE_REDUCTION
+            elif(goal_offset_angle< -c.AI_MAX_ANGLE_REDUCTION):
+                goal_offset_angle = -c.AI_MAX_ANGLE_REDUCTION
 
-        #print(goal_offset_angle)
+            #print(goal_offset_angle)
 
+            rando_factor = (.4*random.random() + .8)
+            power = (rando_factor) * (relative_position_player_to_pocket.magnitude() + relative_position.magnitude()) * .1
+            if(power> 120):
+                power = 120
+            if(power< rando_factor * 20):
+                power = rando_factor * 20
+            self.knock(self.cue, to_player_degrees - goal_offset_angle, power)
+        else:
+            prediction_line_count = 100
+            rando_factor = 1 #(.4*random.random() + .8)
+            print("BRUTE FORCE TIME")
+            shot_options = []
+            for i in range(0,prediction_line_count-1):
+                result = self.do_prediction_line( (360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*100)
+                if result==0:
+                    result= 0.01
 
-        self.knock(self.cue, to_player_degrees - goal_offset_angle, 120)
-        #MAYBE MAKE 3 DIIFRENT VERSIONS AND HAVE EACH BALL PICK ONE?
+                #print(type(result))
+                if(type(result) is float):
+                    shot_options.append( ((360/prediction_line_count)*i + (360/8)*prediction_line_count, rando_factor*100, result) )
+                else:
+                    shot_options.append( ((360/prediction_line_count)*i + (360/8)*prediction_line_count, rando_factor*100, result - player.pose) )
 
-        #THE ABOVE IS ESENTIALLY ANGLE CORRECTION CODE, WE CAN USE THIS WHEN CALUCLATING WALL BOUNCES...
+                if type(shot_options[i][2]) is float:
+                    print("FLOAT OUTPUT: "+ str(shot_options[i][2]))
+                    pass
+                if type(shot_options[i][2]) is Pose:
+                    #shot_options[i][2] -= player.pose
+                    #print("MAG " + str(shot_options[i][2].magnitude()))
+                    pass
 
-        #POCKET ORDERING CODE:
-        #ONLY RUN CURRENT CODE FOR "IMPACT CONE" POCKETS
-        #CURRENT CODE (GETS DIRECT SHOT VALID POCKETS AND ORDERS THEM)
-        #HAVE THE CURRENT CODE ALSO CHECK FOR CROSSING WALLS FROM EMEMY TO PLAYER, NOT JUST PLAYER TO WALL
-        #ATTEMPT BOUNCE SHOTS
-
-
-
+            shot_options.sort(key = lambda x: x[2] - 10000 if type(x[2]) is float else x[2].magnitude())
+            # if type(shot_options[0][2]) is float:
+            #     print("HIT IT! BRUTE FORCED!")
+            self.knock(self.cue, shot_options[0][0], -shot_options[0][1])
 
         self.turn_phase = c.AFTER_HIT
 
@@ -244,7 +305,6 @@ class Ball(PhysicsObject):
         if(self.rotational_velocity.magnitude() < c.MIN_ROTATIONAL_VELOCITY):
             self.rotational_velocity *=0
 
-
     def drag(self, dt):
         if(self.velocity.magnitude() > self.max_speed):
             self.velocity.scale_to(self.max_speed)
@@ -299,7 +359,7 @@ class Ball(PhysicsObject):
         for ball in balls:
             if ball is self:
                 continue
-            if ball.is_player and ball.is_player:
+            if ball.is_player and self.is_player:
                 continue
             if not ball.can_collide:
                 continue
@@ -525,8 +585,9 @@ class Ball(PhysicsObject):
         interpolated_offset = ((self.radius + other.radius) / math.sin(angle_vel)) * math.sin(angle_c)
         # print("OFFSET :" + str(interpolated_offset) + "    angle C: " + str(math.degrees(angle_c)) + "    angle vel: " + str(math.degrees(angle_vel)))
 
-        self.pose -= velocity_vector * abs(interpolated_offset) * (self.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
-        other.pose += velocity_vector * abs(interpolated_offset) * (other.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
+        if((self.velocity.magnitude() + other.velocity.magnitude()) != 0):
+            self.pose -= velocity_vector * abs(interpolated_offset) * (self.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
+            other.pose += velocity_vector * abs(interpolated_offset) * (other.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
 
 
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -891,6 +952,135 @@ class Ball(PhysicsObject):
     def has_sunk(self):
         return self.sunk
 
+    def do_prediction_line(self, angle, power):
+        # if not self.turn_in_progress or not self.turn_phase == c.BEFORE_HIT:
+        #     return
+
+        self.game.in_simulation = True
+        player_copy = copy(self)
+        player_copy.pose = self.pose.copy()
+        player_copy.velocity = self.velocity.copy()
+        player_copy.collide_with_other_ball_2 = player_copy.mock_collision
+        #mouse_pose = Pose(pygame.mouse.get_pos(), 0) + self.game.current_scene.camera.pose
+        #my_pose = self.pose.copy()
+        player_copy.knock(self.cue, angle, power)
+
+        traveled = 0
+        positions = []
+        old = player_copy.pose.copy()
+        final_position = None
+        for i in range(1200):
+
+            if(c.VARIABLE_SIM_SPEED):
+                near_wall = False
+                if(c.SIM_NEAR_WALL_STEP_REDUCTION != 1):
+                    mapTiles = self.game.current_scene.map.tiles_near(player_copy.pose, player_copy.radius + c.SIM_MOVEMENT);
+                    for mapTile in mapTiles:
+                        if(mapTile.collidable):
+                            near_wall = True
+                            break
+                if near_wall and player_copy.velocity.magnitude() >3:
+                    sim_update = ((c.SIM_MOVEMENT) / player_copy.velocity.magnitude() / c.SIM_NEAR_WALL_STEP_REDUCTION)
+                elif player_copy.velocity.magnitude() > 1:
+                    sim_update = ((c.SIM_MOVEMENT)/player_copy.velocity.magnitude())
+                else:
+                    final_position = player_copy.pose.copy()
+                    break
+                    sim_update = 1 / (c.SIM_MIN_FPS)
+                if(sim_update> 1 / (c.SIM_MIN_FPS)):
+                    sim_update = 1 / (c.SIM_MIN_FPS)
+                #mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius + );
+            else:
+                sim_update = 1 / (c.SIM_FPS)
+
+            player_copy.update(sim_update, [])
+            positions.append(player_copy.pose.copy())
+            if player_copy.has_collided:
+                final_position = player_copy.pose.copy()
+                break
+            if player_copy.velocity.magnitude() < 1:
+                final_position = player_copy.pose.copy()
+                break
+            if player_copy.sunk:
+                final_position = Pose((999999,999999), 0)
+                break
+
+            new = player_copy.pose.copy()
+            traveled += (new - old).magnitude()
+            old = new
+            if traveled > 1200:
+                final_position = player_copy.pose.copy()
+                break
+
+        print((self.pose - final_position).magnitude())
+
+        #print("TRAVELD :" + str(traveled))
+
+        #surf = pygame.Surface((3, 3))
+        #surf.fill(c.BLACK)
+        #pygame.draw.circle(surf, c.WHITE, (surf.get_width()//2, surf.get_width()//2), surf.get_width()//2)
+        #alpha = 255
+        #surf.set_colorkey(c.BLACK)
+        #for pose in positions[::1]:
+            #surf.set_alpha(alpha)
+            #screen.blit(surf, (pose.x + offset[0] - surf.get_width()//2, pose.y + offset[1] - surf.get_width()//2))
+
+        #offset_pose = Pose(offset, 0)
+
+        if player_copy.collided_with:
+            other = player_copy.collided_with
+            to_other = other.pose - player_copy.pose
+            #angle = math.degrees(-math.atan2(to_other.y, to_other.x))
+            print("TRAVLED: "+str(traveled))
+            self.game.in_simulation = False
+
+
+            #return(abs(angle - math.degrees(math.atan2(player_copy.velocity.y, player_copy.velocity.x))))
+            return(traveled)
+
+        self.game.in_simulation = False
+        return(final_position)
+
+    def mock_collision(self, other): #ONLY FOR MOCK BALL COLLISIONS
+        #print("hit something? " + str(other.back_surface.get_at((0,0))) + " " + str(self.back_surface.get_at((0,0))))
+
+        if self.has_collided or not other.is_player:
+            return
+        print("YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY")
+        self.has_collided = True
+        self.collided_with = other
+
+        collision_normal = self.pose - other.pose
+        collision_normal_unscaled = collision_normal.copy()
+
+        collision_normal.scale_to(1)
+        velocity_vector = self.velocity.copy()
+        velocity_vector.scale_to(1)
+        # self.pose += velocity_vector * (offset_required * math.cos(math.atan2(velocity_vector.y-collision_normal.y, velocity_vector.x-collision_normal.x)))
+        dot_product_self_norm = collision_normal.x * velocity_vector.x + collision_normal.y * velocity_vector.y;
+
+        if((collision_normal.magnitude() * velocity_vector.magnitude()) != 0):
+            acos_input = dot_product_self_norm / (collision_normal.magnitude() * velocity_vector.magnitude())
+            if(acos_input>1):
+                acos_input = 1
+            if(acos_input<-1):
+                acos_input = -1
+            angle_vel = math.acos(acos_input)
+        else:
+            angle_vel = 1
+
+        angle_b = math.asin((math.sin(angle_vel) / (self.radius + other.radius)) * collision_normal_unscaled.magnitude())
+        angle_c = math.pi - (angle_b + angle_vel)
+
+        if(math.sin(angle_vel)== 0):
+            angle_vel = 1
+        interpolated_offset = ((self.radius + other.radius) / math.sin(angle_vel)) * math.sin(angle_c)
+        # print("OFFSET :" + str(interpolated_offset) + "    angle C: " + str(math.degrees(angle_c)) + "    angle vel: " + str(math.degrees(angle_vel)))
+
+        if(self.velocity.magnitude() + other.velocity.magnitude()) != 0:
+            self.pose -= velocity_vector * abs(interpolated_offset) * (self.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
+            #other.pose += velocity_vector * abs(interpolated_offset) * (other.velocity.magnitude()/(self.velocity.magnitude() + other.velocity.magnitude()))
+
 
 class Shelled(Ball):
     def __init__(self, game, inner_ball, **kwargs):
@@ -936,3 +1126,4 @@ class Shelled(Ball):
     def draw_shadow(self, screen, offset=(0, 0)):
         offset = (offset[0], offset[1] + self.inner_ball.radius*0.25)
         self.inner_ball.draw_shadow(screen, offset=offset)
+
