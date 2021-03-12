@@ -22,6 +22,7 @@ class Game:
         self.in_simulation = False
 
         self.load_sounds()
+        self.current_scene = None
         self.current_scene = LevelScene(self)
         self.main()
 

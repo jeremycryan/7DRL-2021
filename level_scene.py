@@ -5,6 +5,7 @@ from map import Map
 from camera import Camera
 import pygame
 import constants as c
+from ball_types import *
 
 
 class LevelScene(Scene):
@@ -89,7 +90,7 @@ class LevelScene(Scene):
 
     def spawn_balls(self):
         offset = self.current_room().center()
-        self.balls += [Ball(self.game, offset[0] - 200, offset[1] - 140)]
+        self.balls += [OneBall(self.game, offset[0] - 200, offset[1] - 140)]
         self.force_player_next = True
 
     def current_room(self):

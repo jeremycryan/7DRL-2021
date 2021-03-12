@@ -3,7 +3,7 @@ import math
 
 from primitives import PhysicsObject, Pose
 import constants as c
-from particle import Spark, SmokeBit
+from particle import Spark, SmokeBit, PoofBit
 import random
 from cue import BasicCue
 import time
@@ -44,6 +44,8 @@ class Ball(PhysicsObject):
         self.is_player = False
         self.pointer = pygame.image.load(c.image_path("pointer.png"))
         self.pointer.set_colorkey(c.BLACK)
+        self.has_poofed = False
+        self.cue = BasicCue()
 
     def start_turn(self):
         self.turn_in_progress = True
@@ -117,7 +119,7 @@ class Ball(PhysicsObject):
         #print(goal_offset_angle)
 
 
-        self.knock(BasicCue(), to_player_degrees - goal_offset_angle, 120)
+        self.knock(self.cue, to_player_degrees - goal_offset_angle, 120)
         #MAYBE MAKE 3 DIIFRENT VERSIONS AND HAVE EACH BALL PICK ONE?
 
         #THE ABOVE IS ESENTIALLY ANGLE CORRECTION CODE, WE CAN USE THIS WHEN CALUCLATING WALL BOUNCES...
@@ -151,8 +153,6 @@ class Ball(PhysicsObject):
                 self.back_surface.blit(noise, (x0, y0), special_flags=pygame.BLEND_MULT)
 
     def is_completely_in_room(self):
-        if self.game.in_simulation:
-            return False
         tiles = list(self.game.current_scene.map.tiles_near(self.pose, self.radius))
         if not len(list(tiles)):
             return False
@@ -204,7 +204,9 @@ class Ball(PhysicsObject):
                 if self.target_alpha < self.alpha:
                     self.alpha -= 250*dt
                 if self.target_scale < self.scale:
-                    self.scale -= dt*1.2 - (self.target_scale - self.scale)*3*dt
+                    self.scale -= dt*1.4 - (self.target_scale - self.scale)*4*dt
+                    if abs(self.scale - self.target_scale) < 0.05:
+                        self.poof()
                 if self.alpha < 1:
                     self.sink_for_real()
                     return
@@ -500,7 +502,6 @@ class Ball(PhysicsObject):
         return(Pose(((mapTile.x * c.TILE_SIZE) + c.TILE_SIZE/2, mapTile.y * c.TILE_SIZE + c.TILE_SIZE/2 ) ,0)) #offset by tilezise /2 to get center
 
     def collide_with_other_ball_2(self, other):
-
 
         # Offset balls
         collision_normal = self.pose - other.pose
@@ -861,6 +862,20 @@ class Ball(PhysicsObject):
             smoke.radius *= self.radius/60
             self.game.current_scene.floor_particles.append(smoke)
 
+    def make_poof(self, position, num):
+        if self.game.in_simulation:
+            return
+        for i in range(num):
+            smoke = PoofBit(self.game, *position)
+            self.game.current_scene.floor_particles.append(smoke)
+
+    def poof(self):
+        if self.game.in_simulation:
+            return
+        if not self.has_poofed:
+            self.make_poof(self.pose.get_position(), 16)
+            self.has_poofed = True
+
     def sink(self, pocket_pose):
         if not self.can_be_sunk:
             return
@@ -872,7 +887,6 @@ class Ball(PhysicsObject):
     def sink_for_real(self):
         self.sunk = True
         self.turn_in_progress = False
-        #TODO add a neat particle effect
 
     def has_sunk(self):
         return self.sunk

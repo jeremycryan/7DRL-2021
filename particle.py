@@ -43,13 +43,13 @@ class Spark(Particle):
         super().__init__(game)
         self.game = game
         self.pose = Pose((x, y), 0)
-        speed = random.random() * 1000 * intensity
+        speed = random.random() * 1200 * intensity
         angle = random.random() * 360
         self.velocity = Pose((speed, 0), 0)
         self.velocity.rotate_position(angle)
-        self.radius = 5
+        self.radius = 6
         self.color = c.WHITE
-        self.duration = 0.2
+        self.duration = 0.3
         self.intensity = intensity
 
     def update(self, dt, events):
@@ -104,3 +104,53 @@ class SmokeBit(Particle):
         y = self.pose.y + offset[1]
         radius = self.radius * self.get_scale()
         pygame.draw.circle(surf, (200, 200, 200), (x, y), radius)
+
+
+class PoofBit(Particle):
+    def __init__(self, game, x, y):
+        super().__init__(game)
+        self.radius = 16 + random.random()*10
+        self.duration = self.radius * 0.03
+        speed = random.random() * 100 + 80
+        angle = random.random() * 360
+        self.velocity = Pose((speed, 0), 0)
+        self.velocity.rotate_position(angle)
+        self.pose = Pose((x, y), 0)
+
+    def get_alpha(self):
+        return 255
+
+    def update(self, dt, events):
+        super().update(dt, events)
+        self.pose += self.velocity * dt
+        self.velocity *= 0.1**dt
+
+    def get_scale(self):
+        return 1 - self.through(1.5)
+
+    def draw(self, surf, offset=(0, 0)):
+        x = self.pose.x + offset[0]
+        y = self.pose.y + offset[1]
+        radius = self.radius * self.get_scale()
+        color = (int(150 - 50*self.through()),)*3
+        pygame.draw.circle(surf, color, (x, y), radius)
+
+
+class WallAppear(PoofBit):
+    def __init__(self, game, x, y):
+        super().__init__(game, x, y)
+        self.radius = 20 + random.random()*25
+        self.duration = self.radius * 0.03
+        speed = random.random()*100 + 80
+        self.pose = Pose((x, y), 0)
+        self.velocity = Pose((speed, 0), 0)
+        angle = random.random() * 360
+        self.velocity.rotate_position(angle)
+        self.pose += self.velocity * 0.1
+
+    def draw(self, surf, offset=(0, 0)):
+        x = self.pose.x + offset[0]
+        y = self.pose.y + offset[1]
+        radius = self.radius * self.get_scale()
+        color = (c.BLACK)
+        pygame.draw.circle(surf, color, (x, y), radius)

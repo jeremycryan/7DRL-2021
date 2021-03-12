@@ -14,12 +14,11 @@ class Pocket(GameObject):
         self.scale = 1.0
         self.target_scale = 1.0
         self.radius = c.TILE_SIZE * 2**0.5 / 2
-        self.surf = pygame.Surface((self.radius*2, self.radius*2))
-        self.surf.fill(c.MAGENTA)
-        self.surf.set_colorkey(c.MAGENTA)
+        self.surf = pygame.image.load(c.image_path("hole.png"))
+        self.surf.set_colorkey(c.WHITE)
+        self.surf = pygame.transform.scale(self.surf, (85, 85))
         self.eaten = []
         self.hungry = False
-        pygame.draw.circle(self.surf, c.CYAN, (self.radius, self.radius), self.radius)
 
     def update(self, dt, events):
         ds = self.target_scale - self.scale
