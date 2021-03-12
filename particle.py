@@ -194,7 +194,7 @@ class PreBall(Particle):
     def destroy(self):
         super().destroy()
         self.game.current_scene.balls.append(self.ball)
-        self.ball.make_poof()
+        self.ball.poof()
 
     def get_scale(self):
         if self.age > self.grow_time:
