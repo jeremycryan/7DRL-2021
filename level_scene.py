@@ -24,6 +24,9 @@ class LevelScene(Scene):
         self.floor_particles = []
         self.camera = Camera(game, self.current_room())
         self.force_player_next = False
+        self.game.exploring.play(-1)
+        self.game.combat.play(-1)
+        self.game.combat.set_volume(0)
 
     def shake(self, amt, pose=None):
         if not self.game.in_simulation:
@@ -73,6 +76,9 @@ class LevelScene(Scene):
         self.map.update(dt, events)
         self.camera.update(dt, events)
         self.camera.object_to_track = self.current_room()
+        if self.no_enemies():
+            self.game.combat.set_volume(0)
+            self.game.exploring.set_volume(1)
 
     def draw(self, surface, offset=(0, 0)):
         surface.fill(c.BLACK)
@@ -90,8 +96,10 @@ class LevelScene(Scene):
 
     def spawn_balls(self):
         offset = self.current_room().center()
-        self.balls += [OneBall(self.game, offset[0] - 200, offset[1] - 140)]
+        self.balls += [Shelled(self.game, OneBall(self.game), x=offset[0] - 200, y=offset[1] - 140)]
         self.force_player_next = True
+        self.game.combat.set_volume(100)
+        self.game.exploring.set_volume(0)
 
     def current_room(self):
         return self.map.get_at_pixels(*self.player.pose.get_position())

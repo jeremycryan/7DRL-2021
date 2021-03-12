@@ -14,3 +14,4 @@ class OneBall(Ball):
         self.back_surface = pygame.Surface((self.radius*2, self.radius*2))
         self.back_surface.fill((50, 80, 255))
         self.back_surface = pygame.image.load(c.image_path(f"1_ball.png"))
+

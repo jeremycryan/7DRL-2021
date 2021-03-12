@@ -572,6 +572,9 @@ class Ball(PhysicsObject):
         self.velocity = (self_relative_velocity + other.velocity) ;
         other.velocity = (other_relative_velocity*-1 + other.velocity) ;
 
+        self.on_collide(other)
+        other.on_being_hit(self)
+
     def collide_with_wall_corner(self, wall_pose, wall_tile):
 
         # Offset balls
@@ -891,6 +894,14 @@ class Ball(PhysicsObject):
     def has_sunk(self):
         return self.sunk
 
+    def on_collide(self, other):
+        """ Called immediately after a collision """
+        pass
+
+    def on_being_hit(self, other):
+        """ Called immediately after this ball was hit"""
+        pass
+
 
 class Shelled(Ball):
     def __init__(self, game, inner_ball, **kwargs):
@@ -911,8 +922,10 @@ class Shelled(Ball):
         self.twinkle_surf.set_colorkey(c.BLACK)
         self.broken = False
         self.can_be_sunk = False
+        self.last_velocity = self.velocity.copy()
 
     def update(self, dt, events):
+        self.last_velocity = self.velocity.copy()
         super().update(dt, events)
         self.inner_ball.pose = self.pose.copy()
 
@@ -936,3 +949,17 @@ class Shelled(Ball):
     def draw_shadow(self, screen, offset=(0, 0)):
         offset = (offset[0], offset[1] + self.inner_ball.radius*0.25)
         self.inner_ball.draw_shadow(screen, offset=offset)
+
+    def on_being_hit(self, other):
+        if not self.turn_in_progress:
+            if (self.velocity - self.last_velocity).magnitude() > 200:
+                self.shatter()
+
+    def shatter(self):
+        for i, ball in enumerate(self.game.current_scene.balls):
+            if ball is self:
+                self.game.current_scene.balls[i] = self.inner_ball
+                self.inner_ball.outline_hidden = False
+                self.inner_ball.turn_phase = self.turn_phase
+                self.inner_ball.turn_in_progress = self.turn_in_progress
+                break
