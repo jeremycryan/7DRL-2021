@@ -5,6 +5,7 @@ import random
 
 import constants as c
 from level_scene import LevelScene
+from main_menu_scene import MainMenuScene
 
 
 class Game:
@@ -23,7 +24,7 @@ class Game:
 
         self.load_sounds()
         self.current_scene = None
-        self.current_scene = LevelScene(self)
+        self.current_scene = MainMenuScene(self)
         self.main()
 
     def load_sounds(self):
@@ -71,6 +72,10 @@ class Game:
                     lag = 0
                     break
             self.current_scene.draw(self.screen, (0, 0))
+            if self.current_scene.is_over:
+                old_scene = self.current_scene
+                self.current_scene = None
+                self.current_scene = old_scene.next_scene()
             pygame.display.flip()
 
 

@@ -63,6 +63,8 @@ class Player(Ball):
         self.knock(self.active_cue, angle, power)
 
     def draw_prediction_line(self, screen, offset=(0, 0)):
+        if self.sunk:
+            return
         if not self.turn_in_progress or not self.turn_phase == c.BEFORE_HIT:
             return
 
@@ -80,6 +82,12 @@ class Player(Ball):
         old = player_copy.pose.copy()
         final_position = None
         for i in range(c.SIM_ITERATIONS):
+
+            new = player_copy.pose.copy()
+            traveled += (new - old).magnitude()
+            old = new
+            if traveled > c.SIM_MAX_DIST:
+                break
 
             if(c.VARIABLE_SIM_SPEED):
                 near_wall = False
@@ -113,11 +121,11 @@ class Player(Ball):
             if player_copy.sunk:
                 break
 
-            new = player_copy.pose.copy()
-            traveled += (new - old).magnitude()
-            old = new
-            if traveled > c.SIM_MAX_DIST:
-                break
+        if len(positions) > 1:
+            final_direction = positions[-1] - positions[-2]
+        else:
+            final_direction = Pose((1, 0), 0)
+        extra = c.SIM_MAX_DIST - traveled
 
         surf = pygame.Surface((3, 3))
         surf.fill(c.BLACK)
@@ -133,8 +141,8 @@ class Player(Ball):
         if player_copy.collided_with:
             other = player_copy.collided_with
             to_other = other.pose - player_copy.pose
-            angle = -math.atan2(to_other.y, to_other.x)
-            pointer = pygame.transform.rotate(self.pointer, angle*180/math.pi)
+            angle = math.degrees(-math.atan2(to_other.y, to_other.x))
+            pointer = pygame.transform.rotate(self.pointer, angle)
             pointer_length = 100
             start = other.pose - to_other*(1/to_other.magnitude())*other.radius + offset_pose
             end = start + to_other*(1/to_other.magnitude())*pointer_length
@@ -144,6 +152,12 @@ class Player(Ball):
         if final_position:
             final_position += offset_pose
             pygame.draw.circle(screen, c.WHITE, final_position.get_position(), player_copy.radius, 2)
+        elif len(positions) >= 1:
+            final = positions[-1] + offset_pose
+            angle = math.degrees(-math.atan2(final_direction.y, final_direction.x))
+            pointer = pygame.transform.rotate(self.pointer, angle)
+            end = final + final_direction*(1/(final_direction.magnitude()*extra + 1))
+            screen.blit(pointer, (end.x - pointer.get_width() // 2, end.y - pointer.get_height() // 2))
 
         self.game.in_simulation = False
 
