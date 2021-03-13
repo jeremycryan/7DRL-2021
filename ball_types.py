@@ -132,7 +132,7 @@ class SixBall(Ball):
         self.power_boost_factor = 1
         self.max_power_reduction = 30
 
-        self.intelligence_mult = .4
+        self.intelligence_mult = .8
         self.inaccuracy = 8
         self.moves_per_turn = 3
 
@@ -195,10 +195,10 @@ class SevenBall(Ball):
         self.mass = self.mass * 1.1
         self.power_boost_factor = 1.4
         self.max_power_reduction = 70
-        self.can_have_shield = False
+        self.can_have_shield = True
 
         self.intelligence_mult = .4
-        self.inaccuracy = 40
+        self.inaccuracy = 20
 
         self.till_next_attack = 0
         self.attack_on_room_spawn = True
@@ -218,7 +218,7 @@ class SevenBall(Ball):
             self.till_next_attack = 2
             balls = self.game.current_scene.balls
             for ball in balls:
-                if(ball.is_player or ball == self or ball.is_boss or ball.can_have_shield):
+                if(ball.is_player or ball.is_boss or not ball.can_have_shield):
                     continue
                 ball.gain_shell()
             self.turn_phase = c.AFTER_HIT

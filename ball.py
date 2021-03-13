@@ -422,7 +422,7 @@ class Ball(PhysicsObject):
                 continue
             if ball.is_player and self.is_player:
                 continue
-            if (self.only_hit_player and not ball.is_player) or (not self.is_player and ball.only_hit_player):
+            if (self.only_hit_player and not ball.is_player) or (self.is_player and ball.only_hit_player):
                 continue
             if not ball.can_collide:
                 continue
@@ -511,7 +511,7 @@ class Ball(PhysicsObject):
     def break_ball(self):
         #JARM ANIMATION HERE
         balls = self.game.current_scene.balls
-        print("FRAGILE")
+        #print("FRAGILE")
         if self.game.current_scene.current_ball == self:# and self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]:
             self.turn_phase = c.AFTER_HIT
             print("INNER FRAGILE")
@@ -1323,6 +1323,7 @@ class Shelled(Ball):
                 self.inner_ball.turn_phase = self.turn_phase
                 self.inner_ball.turn_in_progress = self.turn_in_progress
                 self.inner_ball.velocity = self.velocity.copy()
+                self.inner_ball.velocity *= c.SHATTER_SPEED_MULT
                 self.large_spark_explosion(self.pose.get_position())
                 self.game.current_scene.shake(25)
                 break
