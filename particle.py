@@ -317,7 +317,7 @@ class ShieldParticle(Particle):
         if self.delay > 0:
             self.age = 0
             self.delay -= dt
-        if self.age > self.shloop_time and not self.has_transformed:
+        if self.age > self.shloop_time and not self.has_transformed and not self.target.sunk:
             self.target.gain_shell()
             self.has_transformed = True
 

@@ -327,7 +327,7 @@ class BossHeart(Ball):
         through_period = ((time.time() - self.game.current_scene.music_started) * c.BPM/60 * period) % period
         peak = 2
         growth_factor = peak - 1
-        growth = growth_factor * (1 - abs(math.sin(through_period))**0.2)
+        growth = growth_factor * (1 - abs(math.sin(through_period))**0.3)
         return (1.0 + growth_factor*growth) * self.scale
 
     def load_back_surface(self):

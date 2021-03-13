@@ -43,7 +43,7 @@ class LevelScene(Scene):
             if priority:
                 self.current_ball = priority.pop()
                 self.current_ball.attack_on_room_spawn = False
-            elif self.force_player_next:
+            elif self.force_player_next and not self.player.sunk:
                 self.current_ball = self.player
                 self.force_player_next = False
             else:
