@@ -1,9 +1,12 @@
 from ball import Ball, Shelled
+from particle import GravityParticle
 
 import random
 import pygame
 
 import constants as c
+import time
+import math
 
 class OneBall(Ball):
     def __init__(self, *args, **kwargs):
@@ -41,7 +44,7 @@ class TwoBall(Ball):
         self.back_surface.fill((50, 80, 255))
         self.back_surface = pygame.image.load(c.image_path(f"2_ball.png"))
 
-class ThreeBall(Ball):
+class FourBall(Ball):
     def __init__(self, *args, **kwargs):
         self.do_things_before_init()
         super().__init__(*args, **kwargs)
@@ -49,6 +52,7 @@ class ThreeBall(Ball):
         self.max_power_reduction = 70
         self.gravity = 3000000
         self.inaccuracy = 20
+        self.since_blip = 0
 
         self.intelligence_mult = 1
 
@@ -59,9 +63,23 @@ class ThreeBall(Ball):
     def load_back_surface(self):
         self.back_surface = pygame.Surface((self.radius * 2, self.radius * 2))
         self.back_surface.fill((50, 80, 255))
-        self.back_surface = pygame.image.load(c.image_path(f"3_ball.png"))
+        self.back_surface = pygame.image.load(c.image_path(f"4_ball.png"))
 
-class FourBall(Ball):
+    def update(self, dt, events):
+        super().update(dt, events)
+        if not self.game.in_simulation and not self.sunk:
+            self.since_blip += dt
+            while self.since_blip > 0.005:
+                self.since_blip -= 0.005
+                self.game.current_scene.particles.append(GravityParticle(self.game, self))
+
+    def draw(self, screen, offset=(0, 0)):
+        if not self.sunk:
+            r = int((c.GRAVITY_RADIUS + math.sin(time.time()*12)*3) * (self.scale * 2 - .999))
+            pygame.draw.circle(screen, (150, 50, 160), (self.pose.x + offset[0], self.pose.y + offset[1]), r, 1)
+        super().draw(screen, offset)
+
+class ThreeBall(Ball):
     def __init__(self, *args, **kwargs):
         self.do_things_before_init()
         super().__init__(*args, **kwargs)
@@ -76,7 +94,7 @@ class FourBall(Ball):
     def load_back_surface(self):
         self.back_surface = pygame.Surface((self.radius * 2, self.radius * 2))
         self.back_surface.fill((50, 80, 255))
-        self.back_surface = pygame.image.load(c.image_path(f"4_ball.png"))
+        self.back_surface = pygame.image.load(c.image_path(f"3_ball.png"))
 
 class FiveBall(Ball):
     def __init__(self, *args, **kwargs):
