@@ -118,6 +118,7 @@ class PoofBit(Particle):
         self.velocity = Pose((speed, 0), 0)
         self.velocity.rotate_position(angle)
         self.pose = Pose((x, y), 0)
+        self.color = None
 
     def get_alpha(self):
         return 255
@@ -130,12 +131,18 @@ class PoofBit(Particle):
     def get_scale(self):
         return 1 - self.through(1.5)
 
+    def get_color(self):
+        if self.color:
+            return self.color
+        else:
+            return (int(150 - 50*self.through()),)*3
+
     def draw(self, surf, offset=(0, 0)):
         x = self.pose.x + offset[0]
         y = self.pose.y + offset[1]
         radius = self.radius * self.get_scale()
-        color = (int(150 - 50*self.through()),)*3
-        pygame.draw.circle(surf, color, (x, y), radius)
+
+        pygame.draw.circle(surf, self.get_color(), (x, y), radius)
 
 
 class WallAppear(PoofBit):
@@ -274,6 +281,7 @@ class ShieldParticle(Particle):
 
         super().__init__(game)
         self.target = target
+        self.target_start_radius = target.radius
         self.start_pose = parent.pose.copy()
         self.shelled_target = Shelled(self.game, target)
         self.target.outline_hidden = False
@@ -291,13 +299,17 @@ class ShieldParticle(Particle):
 
     def get_scale(self):
         if self.age < self.shloop_time:
-            return (self.age / self.shloop_time) **0.5
+            return (self.age / self.shloop_time) **0.3
         else:
             return 1
 
+    def get_target_radius(self):
+        # How big the target should be
+        return int(self.target_start_radius + (self.shelled_target.radius - self.target_start_radius) * self.through())
+
     def get_alpha(self):
         if self.age < self.shloop_time:
-            return ((self.age/self.shloop_time) * 0.5 + 0.5)*255
+            return ((self.age/self.shloop_time) * 0.5 + 0.5)**0.2*255
         else:
             return (1 - (self.age - self.fade_time)/(self.duration - self.fade_time)) * 255
 

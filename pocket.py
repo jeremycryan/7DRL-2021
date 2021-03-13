@@ -16,7 +16,7 @@ class Pocket(GameObject):
         self.radius = c.TILE_SIZE * 2**0.5 / 2
         self.surf = pygame.image.load(c.image_path("hole.png"))
         self.surf.set_colorkey(c.WHITE)
-        self.surf = pygame.transform.scale(self.surf, (85, 85))
+        self.surf = pygame.transform.scale(self.surf, (100, 100))
         self.eaten = []
         self.hungry = False
 
@@ -37,8 +37,12 @@ class Pocket(GameObject):
         surf.blit(surf_to_blit, (x, y))
 
     def swallow(self, ball):
-        self.eaten.append(ball)
-        ball.sink(self.pose.copy())
+        if not self.game.in_simulation:
+            self.eaten.append(ball)
+            ball.sink(self.pose.copy())
+
+    def gulp_animation(self):
+        self.scale = 1.25
 
     def open(self):
         self.hungry = True
@@ -57,3 +61,14 @@ class Pocket(GameObject):
         elif diff.magnitude() + c.PLAYER_POCKET_MARGIN < self.radius:
             return True
         return False
+
+
+class NextFloorPocket(Pocket):
+    def __init__(game, tile):
+        super().__init__(game, tile)
+
+    def can_swallow(self, ball):
+        # Only player can go to next floor
+        if not ball.is_player:
+            return False
+        return super().can_swallow(ball)

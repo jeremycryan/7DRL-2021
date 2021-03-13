@@ -64,6 +64,7 @@ class Ball(PhysicsObject):
         self.only_hit_player = False
         self.moves_per_turn= 1
         self.until_next_turn = 1  # Only used by 7 ball
+        self.collision_radius = self.radius
 
 
 
@@ -538,6 +539,8 @@ class Ball(PhysicsObject):
             #NEARBY CHECK HERE, NEED TO MAKE SURE DIDN"T GLITCH THOUGH EDGE AND HIT THIS, POTENTIALLY PASS BACK TO CORNER COLLIDE
             velocity_vector = self.velocity.copy()
             velocity_vector.scale_to(1)
+            if velocity_vector.x == 0:
+                velocity_vector.x = 0.001
             slope = velocity_vector.y /velocity_vector.x
             offset_interpolate = Pose((0,0),0)
 
@@ -1230,6 +1233,7 @@ class Ball(PhysicsObject):
         self.game.current_scene.balls[self.game.current_scene.balls.index(self)] = mr_shell_face
         if(self.game.current_scene.current_ball == self):
             self.game.current_scene.current_ball = mr_shell_face
+
 
     def update_even_if_shelled(self, dt, events):
         pass

@@ -23,9 +23,10 @@ class Map(GameObject):
         origin = self.rooms[self.height//2][self.width//2]
         origin.generated = True
         origin.enemies_have_spawned = True
+        origin.become_spawn_room()
         for room in self.room_iter():
             room.openings = []
-        self.make_branch(origin, min_length=1, max_length=8, master=True)
+        self.make_branch(origin, min_length=1, max_length=3, master=True)
         for room in self.room_iter():
             room.doors_open()
 
@@ -216,6 +217,8 @@ class Room(GameObject):
                 tile.down_bumper = False
                 tile.left_bumper = False
 
+    def become_spawn_room(self):
+        self.populate_from_path(c.room_path("spawn.txt"))
 
     def populate_from_path(self, path):
         self.pockets = []
@@ -385,20 +388,37 @@ class Tile(GameObject):
             self.surface.fill((30, 80, 30))
         else:
             self.surface.fill(c.BLACK)
+
+        surface = None
+        if self.right_bumper:
+            surface = pygame.image.load(c.image_path("left_wall.png"))
+        elif self.left_bumper:
+            surface = pygame.image.load(c.image_path("right_wall.png"))
+        elif self.down_bumper:
+            surface = pygame.image.load(c.image_path("up_wall.png"))
+        elif self.up_bumper:
+            surface = pygame.image.load(c.image_path("down_wall.png"))
+
+        if surface:
+            surface.set_colorkey(c.WHITE)
+            self.surface.blit(surface, (0, 0))
+        surface = None
+
         green = (30, 80, 30)
         radius = c.TILE_SIZE
         if self.bottom_right_corner:
-            self.surface.fill(green)
-            pygame.draw.circle(self.surface, c.BLACK, (0, 0), radius)
+            surface = pygame.image.load(c.image_path("br_corner.png"))
         elif self.bottom_left_corner:
-            self.surface.fill(green)
-            pygame.draw.circle(self.surface, c.BLACK, (radius, 0), radius)
+            surface = pygame.image.load(c.image_path("bl_corner.png"))
         elif self.top_left_corner:
-            self.surface.fill(green)
-            pygame.draw.circle(self.surface, c.BLACK, (radius, radius), radius)
+            surface = pygame.image.load(c.image_path("tl_corner.png"))
         elif self.top_right_corner:
-            self.surface.fill(green)
-            pygame.draw.circle(self.surface, c.BLACK, (0, radius), radius)
+            surface = pygame.image.load(c.image_path("tr_corner.png"))
+
+        if surface:
+            self.surface.fill((30, 80, 30))
+            surface.set_colorkey(c.WHITE)
+            self.surface.blit(surface, (0, 0))
 
     def draw(self, surface, offset=(0, 0)):
         x = self.x * c.TILE_SIZE + offset[0]

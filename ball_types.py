@@ -1,5 +1,7 @@
 from ball import Ball, Shelled
-from particle import GravityParticle, ShieldParticle, HeartBubble
+from particle import GravityParticle, ShieldParticle, HeartBubble, PoofBit
+
+from primitives import Pose
 
 import random
 import pygame
@@ -316,8 +318,8 @@ class BossHeart(Ball):
         self.behind = pygame.Surface((self.radius*2, self.radius*2))
         self.behind.fill(c.MAGENTA)
         self.behind.set_colorkey(c.MAGENTA)
-        pygame.draw.circle(self.behind, (180, 0, 0), (self.radius, self.radius), self.radius)
-        self.behind.set_alpha(90)
+        pygame.draw.circle(self.behind, (190, 15, 15), (self.radius, self.radius), self.radius)
+        self.behind.set_alpha(80)
         self.back_particles = []
         self.since_bubble = 0
 
@@ -384,3 +386,10 @@ class BossHeart(Ball):
                            int(self.radius * self.scale) + 1,
                            int(2 * self.alpha / 255))
 
+    def make_poof(self, position, num):
+        if self.game.in_simulation:
+            return
+        for i in range(num):
+            smoke = PoofBit(self.game, *position)
+            smoke.color = (180, 0, 0)
+            self.game.current_scene.floor_particles.append(smoke)
