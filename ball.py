@@ -240,7 +240,8 @@ class Ball(PhysicsObject):
             return False
         tiles = self.game.current_scene.map.tiles_near(self.pose, self.radius)
         for tile in tiles:
-
+            if tile.top_right_corner or tile.top_left_corner or tile.bottom_right_corner or tile.bottom_left_corner:
+                continue
             if tile.key not in [c.EMPTY, c.POCKET]:
                 return False
         return True
@@ -990,12 +991,15 @@ class Ball(PhysicsObject):
             smoke = PoofBit(self.game, *position)
             self.game.current_scene.floor_particles.append(smoke)
 
-    def poof(self):
+    def poof(self, on_land=False):
         if self.game.in_simulation:
             return
         if not self.has_poofed:
-            self.make_poof(self.pose.get_position(), 16)
-            self.has_poofed = True
+            if on_land:
+                self.make_poof((self.pose + Pose((0, self.radius/2), 0)).get_position(), 16)
+            else:
+                self.make_poof(self.pose.get_position(), 16)
+                self.has_poofed = True
 
     def sink(self, pocket_pose):
         if not self.can_be_sunk:
@@ -1173,6 +1177,8 @@ class Shelled(Ball):
         super().__init__(game, **kwargs)
         self.inner_ball = inner_ball
         self.radius = self.inner_ball.radius * 1.5
+        if self.radius < c.DEFAULT_BALL_RADIUS * 1.5:
+            self.radius = c.DEFAULT_BALL_RADIUS * 1.5
         self.shell_surf = pygame.Surface((self.radius*2, self.radius*2))
         self.shell_surf.fill(c.MAGENTA)
         pygame.draw.circle(self.shell_surf, (200, 220, 255), (self.radius, self.radius), self.radius)
@@ -1215,7 +1221,7 @@ class Shelled(Ball):
         if self.turn_in_progress:
             color = c.WHITE
         if not self.outline_hidden:
-            pygame.draw.circle(surf, color, (x+self.radius, y+self.radius), self.radius, 2)
+            pygame.draw.circle(surf, color, (x+self.radius+1, y+self.radius+1), self.radius + 1, 2)
 
         diff = self.pose - self.initial_position
         tx = 1 * math.sin(diff.x/7)
