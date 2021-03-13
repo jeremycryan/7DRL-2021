@@ -101,3 +101,6 @@ def image_path(rel):
 
 def sound_path(rel):
     return os.path.join("sounds", rel)
+
+def room_path(rel):
+    return os.path.join("rooms", rel)
