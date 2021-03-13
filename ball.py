@@ -59,6 +59,8 @@ class Ball(PhysicsObject):
         self.gravity = 0
         self.can_have_shield = True
         self.attack_on_room_spawn = False
+        self.is_boss = False
+        self.unlisted = False
 
     def start_turn(self):
         self.turn_in_progress = True
@@ -347,7 +349,7 @@ class Ball(PhysicsObject):
                 grav_factor = 0
             #elif(grav_factor> (1/(c.MAX_GRAVITY_AT_RADIUS**2) - (1/(c.GRAVITY_RADIUS**2)))):
             #    grav_factor = (1/(c.MAX_GRAVITY_AT_RADIUS**2) - (1/(c.GRAVITY_RADIUS**2)))
-            print("GRAV FACTOR : " +str(((grav_factor*ball.mass)/self.mass) * ball.gravity * dt))
+            #print("GRAV FACTOR : " +str(((grav_factor*ball.mass)/self.mass) * ball.gravity * dt))
 
             delta_pose.scale_to(1)
             self.velocity += delta_pose * ((grav_factor*ball.mass)/self.mass) * ball.gravity * dt
@@ -1175,11 +1177,20 @@ class Ball(PhysicsObject):
 
     def gain_shell(self):
         #JARM ANIMATION HERE
-        self.game.current_scene.balls[self.game.current_scene.balls.index(self)] = Shelled(self)
-        Shelled(self)
+        mr_shell_face = Shelled(self.game, self)
+        print(self.pose)
+        self.game.current_scene.balls[self.game.current_scene.balls.index(self)] = mr_shell_face
+        if(self.game.current_scene.current_ball == self):
+            self.game.current_scene.current_ball = mr_shell_face
+
+
+
 class Shelled(Ball):
     def __init__(self, game, inner_ball, **kwargs):
         super().__init__(game, **kwargs)
+
+        self.pose = inner_ball.pose.copy()
+
         self.inner_ball = inner_ball
         self.radius = self.inner_ball.radius * 1.5
         if self.radius < c.DEFAULT_BALL_RADIUS * 1.5:
@@ -1209,18 +1220,33 @@ class Shelled(Ball):
         self.mass = self.inner_ball.mass
         self.gravity = self.inner_ball.gravity
 
+        self.mass = self.inner_ball.mass
+        self.power_boost_factor = self.inner_ball.power_boost_factor
+        self.max_power_reduction = self.inner_ball.max_power_reduction
+        self.intelligence_mult = self.inner_ball.intelligence_mult
+        self.inaccuracy = self.inner_ball.inaccuracy
+        self.till_next_attack = self.inner_ball.till_next_attack
+        self.attack_on_room_spawn = self.inner_ball.attack_on_room_spawn
+
+    def gain_shell(self):
+        pass
+
     def update(self, dt, events):
         self.last_velocity = self.velocity.copy()
         super().update(dt, events)
-        self.inner_ball.pose = self.pose.copy()
-        self.sheen_alpha -= 1500*dt
-        self.sheen_alpha = max(0, self.sheen_alpha)
+        if(not self.game.in_simulation):
+            self.inner_ball.pose = self.pose.copy()
+            self.sheen_alpha -= 1500*dt
+            self.sheen_alpha = max(0, self.sheen_alpha)
 
 
     def draw(self, surf, offset=(0, 0)):
+
         self.inner_ball.draw(surf, offset=offset)
         x = self.pose.x + offset[0] - self.shell_surf.get_width()//2
         y = self.pose.y + offset[1] - self.shell_surf.get_height()//2
+        print("x :" + str(x) + "  y: " + str(y))
+        print(offset)
         surf.blit(self.shell_surf, (x, y))
         color = c.BLACK
         if self.turn_in_progress:
@@ -1242,7 +1268,7 @@ class Shelled(Ball):
     def on_being_hit(self, other):
         if not self.turn_in_progress:
             self.sheen_alpha = 150
-            if (self.velocity - self.last_velocity).magnitude() / self.mass > 200:
+            if (self.velocity - self.last_velocity).magnitude() > c.SHIELD_STRENGTH  / self.mass:
                 self.shatter()
 
     def shatter(self):
