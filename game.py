@@ -62,9 +62,14 @@ class Game:
         while True:
             dt, events = self.update_global()
             lag += dt
+            times = 0
             while lag > 1/c.SIM_FPS:
+                times += 1
                 lag -= 1/c.SIM_FPS
                 self.current_scene.update(1/c.SIM_FPS, events)
+                if times > 3:
+                    lag = 0
+                    break
             self.current_scene.draw(self.screen, (0, 0))
             pygame.display.flip()
 

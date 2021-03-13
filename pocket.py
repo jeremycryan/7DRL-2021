@@ -52,6 +52,8 @@ class Pocket(GameObject):
         diff = self.pose - ball.pose
         if abs(diff.x - self.pose.y) < self.radius or abs(diff.y - self.pose.y) < self.radius:
             return False
-        if diff.magnitude() < self.radius:
+        if diff.magnitude() < self.radius and not ball.is_player:
+            return True
+        elif diff.magnitude() + c.PLAYER_POCKET_MARGIN < self.radius:
             return True
         return False

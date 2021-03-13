@@ -20,7 +20,7 @@ class ExampleBall(Ball):
         self.do_things_before_init()
         super().__init__(*args, **kwargs)
         self.radius = 90
-        
+
     def do_things_before_init(self):
         #put code here
         pass

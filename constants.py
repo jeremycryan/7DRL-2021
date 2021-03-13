@@ -84,6 +84,8 @@ AI_SIM_NEAR_WALL_STEP_REDUCTION=1
 
 BPM = 112
 
+PLAYER_POCKET_MARGIN = 10
+
 def dprint(thing):
     if DEBUG:
         print(thing)

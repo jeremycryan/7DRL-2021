@@ -194,7 +194,7 @@ class PreBall(Particle):
     def destroy(self):
         super().destroy()
         self.game.current_scene.balls.append(self.ball)
-        self.ball.poof()
+        self.ball.poof(on_land=True)
 
     def get_scale(self):
         if self.age > self.grow_time:
@@ -209,7 +209,7 @@ class PreBall(Particle):
             return (1 - (self.age - self.grow_time)/(self.duration - self.grow_time))*255
 
     def get_height(self):
-        max_height = 25
+        max_height = 35
         if self.age < self.grow_time:
             return max_height
         else:
