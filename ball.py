@@ -255,7 +255,7 @@ class Ball(PhysicsObject):
         for tile in tiles:
             if tile.top_right_corner or tile.top_left_corner or tile.bottom_right_corner or tile.bottom_left_corner:
                 continue
-            if tile.key not in [c.EMPTY, c.POCKET]:
+            if tile.key not in [c.EMPTY]:
                 return False
         return True
 
