@@ -299,10 +299,11 @@ class Room(GameObject):
         return self.get_at(x/c.TILE_SIZE, y/c.TILE_SIZE)
 
     def update(self, dt, events):
-        for pocket in self.pockets:
-            pocket.update(dt, events)
-        for tile in self.tile_iter():
-            tile.update(dt, events)
+        if self is self.game.current_scene.current_room:
+            for pocket in self.pockets:
+                pocket.update(dt, events)
+        # for tile in self.tile_iter():
+        #     tile.update(dt, events)
 
     def draw(self, surface, offset=(0, 0)):
         if not self.generated:

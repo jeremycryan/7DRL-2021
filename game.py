@@ -21,6 +21,8 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.in_simulation = False
+        self.player_lives = 3
+        self.player_max_lives = 3
 
         self.load_sounds()
         self.current_scene = None
