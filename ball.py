@@ -60,7 +60,9 @@ class Ball(PhysicsObject):
         self.can_have_shield = True
         self.attack_on_room_spawn = False
         self.is_boss = False
-        self.unlisted = False
+        self.is_fragile = False
+
+
 
     def start_turn(self):
         self.turn_in_progress = True
@@ -428,6 +430,8 @@ class Ball(PhysicsObject):
 
                 self._did_collide = True;
                 self.collide_with_other_ball_2(ball)
+                if(ball.is_fragile):
+                    ball.break_ball()
                 #ball.collide_with_other_ball_2(self)
                 break
         #print("update  # mapTiles: ")
@@ -487,11 +491,26 @@ class Ball(PhysicsObject):
                 self.velocity.scale_to(self.velocity.magnitude() * c.WALL_BOUNCE_FACTOR)
             self.game.current_scene.shake(8 * self.velocity.magnitude()*self.mass / 500, pose=self.velocity)
 
+        if(self.is_fragile and (self._did_collide_wall or self._did_collide) and not self.is_simulating):
+            self.break_ball()
+
         # TODO iterate through other balls and call self.collide_with_other_ball if colliding
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
         pass
-
+    def break_ball(self):
+        #JARM ANIMATION HERE
+        balls = self.game.current_scene.balls
+        print("FRAGILE")
+        if self.game.current_scene.current_ball == self:# and self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]:
+            self.turn_phase = c.AFTER_HIT
+            print("INNER FRAGILE")
+            self.game.current_scene.current_ball.turn_in_progress = False
+            self.game.current_scene.current_ball = self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]
+        balls.remove(self)
     def do_collision(self, mapTile, interpolate_checked = False):
+
+        if (self.is_fragile and not self.is_simulating):
+            self.break_ball()
         #return()
         #print("wall");
         relative_position = self.pose - self.map_coordinate_to_pose(mapTile)
@@ -642,6 +661,8 @@ class Ball(PhysicsObject):
 
         angle_b = math.asin((math.sin(angle_vel) / (self.radius + other.radius)) * collision_normal_unscaled.magnitude())
         angle_c = math.pi - (angle_b + angle_vel)
+        if(math.sin(angle_vel) == 0):
+            angle_vel = 1
         interpolated_offset = ((self.radius + other.radius) / math.sin(angle_vel)) * math.sin(angle_c)
         # print("OFFSET :" + str(interpolated_offset) + "    angle C: " + str(math.degrees(angle_c)) + "    angle vel: " + str(math.degrees(angle_vel)))
 
@@ -670,8 +691,15 @@ class Ball(PhysicsObject):
         momemtum = relative_velocity * self.mass
 
         dot_product_vectors = collision_normal.x * relative_velocity.x + collision_normal.y * relative_velocity.y;
-
-        energyRatio = math.sin( math.acos (dot_product_vectors/ (collision_normal.magnitude() * relative_velocity.magnitude()) ) )
+        if(collision_normal.magnitude() * relative_velocity.magnitude() != 0):
+            acos_input = dot_product_vectors/ (collision_normal.magnitude() * relative_velocity.magnitude())
+            if acos_input > 1:
+                acos_input = 1
+            elif acos_input < -1:
+                acos_input = -1
+            energyRatio = math.sin( math.acos ( acos_input) )
+        else:
+            energyRatio = .5
 
         #print(energyRatio)
 
@@ -728,6 +756,8 @@ class Ball(PhysicsObject):
     def collide_with_wall_corner_2(self, relative_pose, wall_tile, interpolate_checked = False):
 
         #print("Wall_corner")
+        if (self.is_fragile and not self.is_simulating):
+            self.break_ball()
 
         if(not interpolate_checked or True): #CURRENTLY FOCING TO ALLWAYS RUN - THIS MIGHT WORK AND NOT CREATE AN INFINATE LOOP BECAUSE INTERPOLATING AN INERPOLATED POINT SHOULD NOT CALL A WALL AGAIN
             center_ball_2_center_wall = relative_pose.copy()
@@ -1225,7 +1255,8 @@ class Shelled(Ball):
         self.max_power_reduction = self.inner_ball.max_power_reduction
         self.intelligence_mult = self.inner_ball.intelligence_mult
         self.inaccuracy = self.inner_ball.inaccuracy
-        self.till_next_attack = self.inner_ball.till_next_attack
+        if(hasattr(self.inner_ball,"till_next_attack")):
+            self.till_next_attack = self.inner_ball.till_next_attack
         self.attack_on_room_spawn = self.inner_ball.attack_on_room_spawn
 
     def gain_shell(self):

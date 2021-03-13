@@ -117,7 +117,7 @@ class LevelScene(Scene):
     def spawn_balls(self):
         offset = self.current_room().center()
         #self.balls += [Ball(self.game, offset[0] - 200, offset[1] - 140)]
-        self.particles += [PreBall(self.game, ThreeBall(self.game, offset[0] - 200, offset[1] - 140))]
+        self.particles += [PreBall(self.game, SixBall(self.game, offset[0] - 200, offset[1] - 140))]
         self.force_player_next = True
         self.game.combat.set_volume(100)
         self.game.exploring.set_volume(0)

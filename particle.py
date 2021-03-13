@@ -183,12 +183,12 @@ class BubbleBurst(Particle):
 
 
 class PreBall(Particle):
-    def __init__(self, game, ball):
+    def __init__(self, game, ball, grow_time = .3, drop_time = .4):
         super().__init__(game)
         self.ball = ball
         self.pose = self.ball.pose.copy()
-        self.grow_time = 0.3
-        self.drop_time = 0.4
+        self.grow_time = grow_time
+        self.drop_time = drop_time
         self.duration = self.grow_time + self.drop_time
 
     def destroy(self):
