@@ -13,6 +13,7 @@ import time
 
 class Ball(PhysicsObject):
     def __init__(self, game, x=0, y=0, radius=c.DEFAULT_BALL_RADIUS, drag_multiplicative= c.DEFAULT_BALL_MULT_DRAG, drag_constant = c.DEFAULT_BALL_CONSTANT_DRAG, max_speed = c.DEFAULT_BALL_MAX_SPEED):
+        print("X: " + str(x) + "   Y: " + str(y))
         self.radius = radius
         self.mass = 1
         self.color = (255, 0, 0)  # This won't matter once we change drawing code
@@ -225,6 +226,7 @@ class Ball(PhysicsObject):
             self.knock(self.cue, shot_options[0][0], shot_options[0][1])
 
         self.turn_phase = c.AFTER_HIT
+
 
     def round_to_map_coordinate(self, pose):
         _pose = pose.copy()
@@ -1061,7 +1063,7 @@ class Ball(PhysicsObject):
         self.can_collide = False
         self.target_alpha = 0
         self.target_scale = 0.5
-        if not self.is_player:
+        if not self.is_player and not (self.game.in_simulation or self.is_simulating):
             self.game.current_scene.force_player_next = True
 
     def sink_for_real(self):

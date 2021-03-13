@@ -55,10 +55,13 @@ class LevelScene(Scene):
                     for ball in self.balls:
                         if(ball.moves_per_turn != 0):
                             balls_no_ghosts.append(ball)
-                    self.balls = copy(balls_no_ghosts)
+                #copyed_ghosts = copy(balls_no_ghosts)
 
                     index = (self.balls.index(self.current_ball) + 1) % len(self.balls)
                     self.current_ball = self.balls[index]
+                #else:
+                   # self.current_ball.turn_in_progress = False
+
 
             self.current_ball.start_turn()
 
@@ -136,9 +139,16 @@ class LevelScene(Scene):
     def spawn_balls(self):
         offset = self.current_room().center()
         #self.balls += [Ball(self.game, offset[0] - 200, offset[1] - 140)]
-        self.particles += [PreBall(self.game, SevenBall(self.game, offset[0] - 200, offset[1] - 140))]
-        self.particles += [PreBall(self.game, ThreeBall(self.game, offset[0] - 200, offset[1] - 0))]
-        self.particles += [PreBall(self.game, BossHeart(self.game, offset[0] + 200, offset[1] - 0))]
+        spawn_locations = self.current_room().find_spawn_locations(3)
+        print("SPAWNING" + str(spawn_locations))
+
+        if(spawn_locations != False):
+            print(spawn_locations[0][0])
+            self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[0][0], spawn_locations[0][1]))]
+            self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[1][0], spawn_locations[1][1]))]
+            self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[2][0], spawn_locations[2][1]))]
+        else:
+            print("SPAWNING FAILED")
 
         self.force_player_next = True
         self.game.combat.set_volume(100)

@@ -251,6 +251,46 @@ class Room(GameObject):
 
         return temp_tile.collidable
 
+    def find_spawn_locations(self, spawn_count):
+        room_x = self.x * c.ROOM_WIDTH_TILES
+        room_y = self.y * c.ROOM_HEIGHT_TILES
+        spawn_locations = []
+        max_iterations = 100
+
+        while(len(spawn_locations)< spawn_count):
+            found = False
+            iterations = 0
+            while(not found and iterations<max_iterations):
+                iterations += 1
+                found = True
+                for i_y in range(-1,1):
+                    for i_x in range(-1,1):
+                        x_loc = c.ROOM_WIDTH_TILES * random.random()
+                        y_loc = c.ROOM_HEIGHT_TILES * random.random()
+                        test_tile = self.get_at(x_loc + i_x, y_loc + i_y)
+                        if(test_tile == False):
+                            found = False
+                            continue
+                        else:
+                            print("SSSSS")
+
+                        for ball in self.game.current_scene.balls:
+                            if(ball.pose - Pose( (((x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2)), 0)).magnitude()<60:
+                                found = False
+                                break
+                        for spawn_location in spawn_locations:
+                            if(Pose((spawn_location[0], spawn_location[1]),0) - Pose( (((x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2)), 0)).magnitude()<60:
+                                found = False
+                                break
+                        tile_key = test_tile.key
+                        if(tile_key == c.POCKET or tile_key == c.UP_WALL or tile_key == c.DOWN_WALL or tile_key == c.LEFT_WALL or tile_key == c.RIGHT_WALL or tile_key == c.WALL):
+                            found = False
+                            break
+            if(iterations>=max_iterations):
+                return False
+            spawn_locations.append(( ( (x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2  )  ))
+
+        return (spawn_locations)
 
     def get_at_pixels(self, x, y):
         return self.get_at(x/c.TILE_SIZE, y/c.TILE_SIZE)
