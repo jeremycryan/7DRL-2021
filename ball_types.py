@@ -105,24 +105,69 @@ class SixBall(Ball):
     def __init__(self, *args, **kwargs):
         self.do_things_before_init()
         super().__init__(*args, **kwargs)
-        self.radius = c.DEFAULT_BALL_RADIUS * 2
-        self.mass = self.mass * (self.radius/c.DEFAULT_BALL_RADIUS)**3
-        self.power_boost_factor = .8
-        self.max_power_reduction = 40
+        self.radius = c.DEFAULT_BALL_RADIUS * 1.35
+        self.mass = self.mass * 1.6
+        self.power_boost_factor = 1.8
+        self.max_power_reduction = 70
+        self.drag_constant *= 1
 
-        self.intelligence_mult = 1
-        self.inaccuracy = 0
+        self.intelligence_mult = .5
+        self.inaccuracy = 10
 
         self.load_back_surface()
+
     def do_things_before_init(self):
         # put code here
         pass
 
     def load_back_surface(self):
-        self.back_surface = pygame.Surface((self.radius*2, self.radius*2))
+        self.back_surface = pygame.Surface((self.radius * 2, self.radius * 2))
         self.back_surface.fill((50, 80, 255))
-        self.back_surface = pygame.image.load(c.image_path(f"5_ball.png"))
+        self.back_surface = pygame.image.load(c.image_path(f"6_ball.png"))
 
+class SevenBall(Ball):
+    def __init__(self, *args, **kwargs):
+        self.do_things_before_init()
+        super().__init__(*args, **kwargs)
+        self.radius = c.DEFAULT_BALL_RADIUS * 1.15
+        self.mass = self.mass * 1.1
+        self.power_boost_factor = 1.4
+        self.max_power_reduction = 70
+
+        self.intelligence_mult = .5
+        self.inaccuracy = 40
+
+        self.till_next_attack = 0
+        self.attack_on_room_spawn = True
+        #self.game.current_scene.current_ball = self
+        #self.game.current_scene.force_player_next = False
+
+        self.take_turn()
+
+
+
+        self.load_back_surface()
+    def take_turn(self):
+        if(self.till_next_attack>0):
+            super().take_turn()
+            self.till_next_attack -= 1
+        else:
+            self.till_next_attack = 2
+            balls = self.game.current_scene.current_ball
+            for ball in balls:
+                if(ball.is_player):
+                    continue
+                ball.gain_shell()
+            self.turn_phase = c.AFTER_HIT
+
+    def do_things_before_init(self):
+        # put code here
+        pass
+
+    def load_back_surface(self):
+        self.back_surface = pygame.Surface((self.radius * 2, self.radius * 2))
+        self.back_surface.fill((50, 80, 255))
+        self.back_surface = pygame.image.load(c.image_path(f"7_ball.png"))
 
 class ExampleBall(Ball):
     def __init__(self, *args, **kwargs):

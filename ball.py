@@ -56,6 +56,8 @@ class Ball(PhysicsObject):
         self.inaccuracy = 0
         self.max_power_reduction = 0
         self.gravity = 0
+        self.can_have_shield = True
+        self.attack_on_room_spawn = False
 
 
 
@@ -91,8 +93,8 @@ class Ball(PhysicsObject):
             # is_wall = test_tile.collidable
 
             is_wall_2 = current_room.coordinate_collidable(to_test_pose.x, to_test_pose.y)
-            if(is_wall_2):
-                 print("FOUND WALL   CURRENT STEP = " + str(current_step/(c.TILE_SIZE / 2)))
+            # if(is_wall_2):
+            #      print("FOUND WALL   CURRENT STEP = " + str(current_step/(c.TILE_SIZE / 2)))
             # else:
             #     print("blatg")
 
@@ -185,7 +187,7 @@ class Ball(PhysicsObject):
                 _hold_pose = self.pose
                 _hold_velocity = self.velocity
                 self.is_simulating = True
-                result = self.do_prediction_line( (360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*(70-self.max_power_reduction))
+                result = self.do_prediction_line( (360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*(95-self.max_power_reduction))
                 self.tractor_beam_target = None
                 self.can_collide = True
                 self.is_simulating = False
@@ -197,9 +199,9 @@ class Ball(PhysicsObject):
 
                 #print(type(result))
                 if(type(result) is float):
-                    shot_options.append( ((360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*(70-self.max_power_reduction), result) )
+                    shot_options.append( ((360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*(95-self.max_power_reduction), result) )
                 else:
-                    shot_options.append( ((360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*(70-self.max_power_reduction), (result - player.pose)) )
+                    shot_options.append( ((360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*(95-self.max_power_reduction), (result - player.pose)) )
 
                 # if type(shot_options[i][2]) is float:
                 #     print("FLOAT OUTPUT: "+ str(shot_options[i][2]))
@@ -210,7 +212,7 @@ class Ball(PhysicsObject):
                 #     pass
 
             shot_options.sort(key = lambda x: x[2] - 10000 if type(x[2]) is float else x[2].magnitude())
-            print("CHOSEN TYPE: " + str(type(shot_options[0][2])))
+            print("CHOSEN TYPE: " + str(type(shot_options[0][2])) + "   angle: " + str( shot_options[0][0]) + "  power: " + str(shot_options[0][1]))
             # if type(shot_options[0][2]) is float:
             #     print("HIT IT! BRUTE FORCED!")
             self.knock(self.cue, shot_options[0][0], shot_options[0][1])
@@ -295,7 +297,7 @@ class Ball(PhysicsObject):
                     return
             return
 
-        self.update_in_simulation(dt, events)
+        self.update_in_simulation(dt, events) #NOT FOR IN SIM - GRAVITY CODE IN HERE
         super().update(dt, events)  # update position based on velocity, velocity based on acceleration
 
         #self.drag_continous(dt)
@@ -394,6 +396,7 @@ class Ball(PhysicsObject):
             return
 
         balls = self.game.current_scene.balls;
+
         mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1);
 
         for pocket in self.game.current_scene.current_room().pockets:
@@ -1171,7 +1174,10 @@ class Ball(PhysicsObject):
         """ Called immediately after this ball was hit"""
         pass
 
-
+    def gain_shell(self):
+        #JARM ANIMATION HERE
+        self.game.current_scene.balls[self.game.current_scene.balls.index(self)] = Shelled(self)
+        Shelled(self)
 class Shelled(Ball):
     def __init__(self, game, inner_ball, **kwargs):
         super().__init__(game, **kwargs)
