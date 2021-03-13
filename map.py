@@ -258,7 +258,7 @@ class Room(GameObject):
         room_x = self.x * c.ROOM_WIDTH_TILES
         room_y = self.y * c.ROOM_HEIGHT_TILES
         spawn_locations = []
-        max_iterations = 100
+        max_iterations = 400
 
         while(len(spawn_locations)< spawn_count):
             found = False
@@ -274,8 +274,7 @@ class Room(GameObject):
                         if(test_tile == False):
                             found = False
                             continue
-                        else:
-                            print("SSSSS")
+
 
                         for ball in self.game.current_scene.balls:
                             if(ball.pose - Pose( (((x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2)), 0)).magnitude()<60:

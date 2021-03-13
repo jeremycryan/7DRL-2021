@@ -55,10 +55,14 @@ class LevelScene(Scene):
                     for ball in self.balls:
                         if(ball.moves_per_turn != 0):
                             balls_no_ghosts.append(ball)
-                #copyed_ghosts = copy(balls_no_ghosts)
-
-                    index = (self.balls.index(self.current_ball) + 1) % len(self.balls)
-                    self.current_ball = self.balls[index]
+                    if(len(balls_no_ghosts)== 0):
+                        index = (self.balls.index(self.current_ball) + 1) % len(self.balls)
+                        self.current_ball = self.balls[index]
+                    else:
+                        copyed_ghosts = copy(balls_no_ghosts)
+                        index = (copyed_ghosts.index(self.current_ball) + 1) % len(self.balls)
+                        self.current_ball = copyed_ghosts[index]
+                        
                 #else:
                    # self.current_ball.turn_in_progress = False
 
@@ -144,7 +148,7 @@ class LevelScene(Scene):
 
         if(spawn_locations != False):
             print(spawn_locations[0][0])
-            self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[0][0], spawn_locations[0][1]))]
+            self.particles += [PreBall(self.game, SixBall(self.game, spawn_locations[0][0], spawn_locations[0][1]))]
             self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[1][0], spawn_locations[1][1]))]
             self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[2][0], spawn_locations[2][1]))]
         else:
