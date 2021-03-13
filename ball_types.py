@@ -1,5 +1,5 @@
 from ball import Ball, Shelled
-from particle import GravityParticle
+from particle import GravityParticle, ShieldParticle
 
 import random
 import pygame
@@ -206,6 +206,7 @@ class SevenBall(Ball):
         #self.game.current_scene.force_player_next = False
 
         #self.take_turn()
+        self.until_next_turn = 0
 
         self.load_back_surface()
     def take_turn(self):
@@ -217,11 +218,27 @@ class SevenBall(Ball):
             print("Shield")
             self.till_next_attack = 2
             balls = self.game.current_scene.balls
+            delay = 0
+            self.until_next_turn = 1
             for ball in balls:
                 if(ball.is_player or ball.is_boss or not ball.can_have_shield):
                     continue
-                ball.gain_shell()
-            self.turn_phase = c.AFTER_HIT
+                if ball.can_have_shield and not isinstance(ball, Shelled):
+                    self.give_shell_to(ball, delay=delay)
+                delay += 0.5
+            self.until_next_turn += delay
+
+    def update(self, dt, events):
+        super().update(dt, events)
+
+        if self.game.in_simulation:
+            return
+        self.until_next_turn -= dt
+
+        if not self.turn_in_progress:
+            self.until_next_turn = 1
+        if self.turn_in_progress and self.until_next_turn < 0:
+            self.turn_in_progress = False
 
     def do_things_before_init(self):
         # put code here
@@ -231,6 +248,9 @@ class SevenBall(Ball):
         self.back_surface = pygame.Surface((self.radius * 2, self.radius * 2))
         self.back_surface.fill((50, 80, 255))
         self.back_surface = pygame.image.load(c.image_path(f"7_ball.png"))
+
+    def give_shell_to(self, other, delay=0):
+        self.game.current_scene.particles.append(ShieldParticle(self.game, self, other, delay=delay))
 
 class GhostBall(Ball):
     def __init__(self, *args, **kwargs):

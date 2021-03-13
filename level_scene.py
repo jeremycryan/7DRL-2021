@@ -6,7 +6,7 @@ from camera import Camera
 import pygame
 import constants as c
 from ball_types import *
-from particle import PreBall
+from particle import PreBall, ShieldParticle
 
 
 class LevelScene(Scene):
@@ -35,9 +35,9 @@ class LevelScene(Scene):
             self.camera.shake(amt, pose)
 
     def update_current_ball(self):
-        if self.balls_are_spawning():
+        if self.balls_are_spawning() or self.shields_are_spawning():
             return
-        if not self.current_ball.turn_in_progress:
+        if not self.current_ball.turn_in_progress or self.current_ball.sunk:
             priority = list(self.priority_balls())
             if priority:
                 self.current_ball = priority.pop()
@@ -126,11 +126,17 @@ class LevelScene(Scene):
                 return True
         return False
 
+    def shields_are_spawning(self):
+        for particle in self.particles:
+            if isinstance(particle, ShieldParticle):
+                return True
+        return False
+
     def spawn_balls(self):
         offset = self.current_room().center()
         #self.balls += [Ball(self.game, offset[0] - 200, offset[1] - 140)]
         self.particles += [PreBall(self.game, SevenBall(self.game, offset[0] - 200, offset[1] - 140))]
-        self.particles += [PreBall(self.game, ThreeBall(self.game, offset[0] - 200, offset[1] - 40))]
+        self.particles += [PreBall(self.game, ThreeBall(self.game, offset[0] - 200, offset[1] - 0))]
 
         self.force_player_next = True
         self.game.combat.set_volume(100)

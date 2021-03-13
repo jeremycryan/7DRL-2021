@@ -1005,7 +1005,7 @@ class Ball(PhysicsObject):
         if self.turn_in_progress:
             color = c.WHITE
         if not self.outline_hidden and self.alpha > 128:
-            pygame.draw.circle(screen, color, (x+self.radius*self.scale, y+self.radius*self.scale), self.radius*self.scale, int(2*self.alpha/255))
+            pygame.draw.circle(screen, color, (x+self.radius*self.scale, y+self.radius*self.scale), int(self.radius*self.scale) + 1, int(2*self.alpha/255))
 
 
     def draw_shadow(self, screen, offset=(0, 0)):
@@ -1220,7 +1220,6 @@ class Ball(PhysicsObject):
     def gain_shell(self):
         #JARM ANIMATION HERE
         mr_shell_face = Shelled(self.game, self)
-        print(self.pose)
         self.game.current_scene.balls[self.game.current_scene.balls.index(self)] = mr_shell_face
         if(self.game.current_scene.current_ball == self):
             self.game.current_scene.current_ball = mr_shell_face
@@ -1275,6 +1274,9 @@ class Shelled(Ball):
     def gain_shell(self):
         pass
 
+    def give_shell_to(self, other, delay=0):
+        self.inner_ball.give_shell_to(other, delay=delay)
+
     def update(self, dt, events):
         self.last_velocity = self.velocity.copy()
         super().update(dt, events)
@@ -1289,14 +1291,12 @@ class Shelled(Ball):
         self.inner_ball.draw(surf, offset=offset)
         x = self.pose.x + offset[0] - self.shell_surf.get_width()//2
         y = self.pose.y + offset[1] - self.shell_surf.get_height()//2
-        print("x :" + str(x) + "  y: " + str(y))
-        print(offset)
         surf.blit(self.shell_surf, (x, y))
         color = c.BLACK
         if self.turn_in_progress:
             color = c.WHITE
         if not self.outline_hidden:
-            pygame.draw.circle(surf, color, (x+self.radius+1, y+self.radius+1), self.radius + 1, 2)
+            pygame.draw.circle(surf, color, (x+self.radius, y+self.radius), self.radius + 1, 2)
 
         diff = self.pose - self.initial_position
         tx = 1 * math.sin(diff.x/7)

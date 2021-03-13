@@ -267,3 +267,68 @@ class GravityParticle(Particle):
         surf.blit(orb,
                   (self.ball.pose.x + self.pose_rel.x + offset[0] - orb.get_width()//2, self.ball.pose.y + self.pose_rel.y + offset[1] - orb.get_height()//2),
                   special_flags=pygame.BLEND_ADD)
+
+class ShieldParticle(Particle):
+    def __init__(self, game, parent, target, delay=0):
+        from ball import Shelled  # Is this good code? No. Does it work? Maybe.
+
+        super().__init__(game)
+        self.target = target
+        self.start_pose = parent.pose.copy()
+        self.shelled_target = Shelled(self.game, target)
+        self.target.outline_hidden = False
+        self.shloop_time = 0.5
+        self.fade_time = 0.5
+        self.duration = self.shloop_time + self.fade_time
+        self.delay = delay
+        self.has_transformed = False
+
+        self.r = int(self.shelled_target.radius)
+        self.surf = pygame.Surface((self.r*2, self.r*2))
+        self.surf.fill(c.BLACK)
+        self.surf.set_colorkey(c.BLACK)
+        pygame.draw.circle(self.surf, self.get_color(), (self.r, self.r), self.r)
+
+    def get_scale(self):
+        if self.age < self.shloop_time:
+            return (self.age / self.shloop_time) **0.5
+        else:
+            return 1
+
+    def get_alpha(self):
+        if self.age < self.shloop_time:
+            return ((self.age/self.shloop_time) * 0.5 + 0.5)*255
+        else:
+            return (1 - (self.age - self.fade_time)/(self.duration - self.fade_time)) * 255
+
+    def get_color(self):
+        return c.WHITE
+
+    def get_pose(self):
+        if self.age > self.shloop_time:
+            return self.target.pose.copy()
+        diff = self.target.pose - self.start_pose
+        through = (self.age/self.shloop_time)**2
+        offset = diff * through
+        return offset + self.start_pose
+
+    def update(self, dt, events):
+        super().update(dt, events)
+        if self.delay > 0:
+            self.age = 0
+            self.delay -= dt
+        if self.age > self.shloop_time and not self.has_transformed:
+            self.target.gain_shell()
+            self.has_transformed = True
+
+    def draw(self, surface, offset=(0, 0)):
+        if self.delay > 0:
+            return
+        pose = self.get_pose()
+
+        r = self.r * self.get_scale()
+        surf = pygame.transform.scale(self.surf, (int(r*2), int(r*2)))
+        surf.set_alpha(self.get_alpha())
+        x = pose.x + offset[0] - r
+        y = pose.y + offset[1] - r
+        surface.blit(surf, (x, y))

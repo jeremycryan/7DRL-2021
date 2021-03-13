@@ -56,7 +56,7 @@ class Player(Ball):
             self.turn_phase = c.AFTER_HIT
 
         angle = math.atan2(-hit_vector.y, hit_vector.x) * 180/math.pi
-        power = hit_vector.magnitude()*0.35
+        power = hit_vector.magnitude()*0.5
         if power > 100:
             power = 100
         self.velocity *= 0
