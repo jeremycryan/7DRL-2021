@@ -37,13 +37,22 @@ class LevelScene(Scene):
         if self.balls_are_spawning():
             return
         if not self.current_ball.turn_in_progress:
-            if self.force_player_next:
+            priority = list(self.priority_balls())
+            if priority:
+                self.current_ball = priority.pop()
+                self.current_ball.attack_on_room_spawn = False
+            elif self.force_player_next:
                 self.current_ball = self.player
                 self.force_player_next = False
             else:
                 index = (self.balls.index(self.current_ball) + 1) % len(self.balls)
                 self.current_ball = self.balls[index]
             self.current_ball.start_turn()
+
+    def priority_balls(self):
+        for ball in self.balls:
+            if ball.attack_on_room_spawn:
+                yield ball
 
     def no_enemies(self):
         if self.balls_are_spawning():

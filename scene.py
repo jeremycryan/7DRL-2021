@@ -5,6 +5,7 @@ class Scene(GameObject):
     def __init__(self, game):
         self.game = game
         self.screen = game.screen
+        self.is_over = False
 
     def next_scene(self):
         return Scene

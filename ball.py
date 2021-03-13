@@ -51,7 +51,7 @@ class Ball(PhysicsObject):
         self.has_collided = False
         self.collided_with = None
         self.is_simulating = False
-
+        self.attack_on_room_spawn = False
 
     def start_turn(self):
         self.turn_in_progress = True
