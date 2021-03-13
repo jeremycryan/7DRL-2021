@@ -61,6 +61,8 @@ class Ball(PhysicsObject):
         self.attack_on_room_spawn = False
         self.is_boss = False
         self.is_fragile = False
+        self.only_hit_player = False
+        self.moves_per_turn= 1
 
 
 
@@ -281,6 +283,7 @@ class Ball(PhysicsObject):
 
     def update(self, dt, events):
         if self.game.current_scene.all_balls_below_speed() and self.turn_in_progress and self.turn_phase == c.AFTER_HIT:
+            #if(self.moves_per_turn <= self.game.current_scene.moves_used):
             self.turn_in_progress = False
             self.turn_phase = c.BEFORE_HIT
 
@@ -356,6 +359,12 @@ class Ball(PhysicsObject):
             delta_pose.scale_to(1)
             self.velocity += delta_pose * ((grav_factor*ball.mass)/self.mass) * ball.gravity * dt
 
+
+            # if self.turn_in_progress and self.turn_phase == c.BEFORE_HIT and self.is_simulating and (ball.pose - self.pose).magnitude() < c.GRAVITY_RADIUS:
+            #      ball.velocity -= delta_pose * ((max(grav_factor,.0001) * ball.mass) / self.mass) * ball.gravity * dt
+
+            #max(grav_factor, .01)
+
     def drag(self, dt):
         if(self.velocity.magnitude() > self.max_speed):
             self.velocity.scale_to(self.max_speed)
@@ -412,6 +421,8 @@ class Ball(PhysicsObject):
             if ball is self:
                 continue
             if ball.is_player and self.is_player:
+                continue
+            if (self.only_hit_player and not ball.is_player) or (not self.is_player and ball.only_hit_player):
                 continue
             if not ball.can_collide:
                 continue
@@ -506,7 +517,8 @@ class Ball(PhysicsObject):
             print("INNER FRAGILE")
             self.game.current_scene.current_ball.turn_in_progress = False
             self.game.current_scene.current_ball = self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]
-        balls.remove(self)
+        if(self in self.game.current_scene.balls):
+            balls.remove(self)
     def do_collision(self, mapTile, interpolate_checked = False):
 
         if (self.is_fragile and not self.is_simulating):
@@ -1249,6 +1261,7 @@ class Shelled(Ball):
         self.take_turn = lambda *args: type(self.inner_ball).take_turn(self, *args)
         self.mass = self.inner_ball.mass
         self.gravity = self.inner_ball.gravity
+        self.moves_per_turn = self.inner_ball.moves_per_turn
 
         self.mass = self.inner_ball.mass
         self.power_boost_factor = self.inner_ball.power_boost_factor

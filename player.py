@@ -70,6 +70,7 @@ class Player(Ball):
 
         self.game.in_simulation = True
         player_copy = copy(self)
+        player_copy.is_simulating = True
         player_copy.pose = self.pose.copy()
         player_copy.velocity = self.velocity.copy()
         player_copy.collide_with_other_ball_2 = player_copy.mock_collision

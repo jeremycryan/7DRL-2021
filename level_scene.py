@@ -28,6 +28,7 @@ class LevelScene(Scene):
         self.game.exploring.play(-1)
         self.game.combat.play(-1)
         self.game.combat.set_volume(0)
+        self.moves_used = 0
 
     def shake(self, amt, pose=None):
         if not self.game.in_simulation:
@@ -45,8 +46,19 @@ class LevelScene(Scene):
                 self.current_ball = self.player
                 self.force_player_next = False
             else:
-                index = (self.balls.index(self.current_ball) + 1) % len(self.balls)
-                self.current_ball = self.balls[index]
+                self.moves_used += 1
+                if(self.current_ball.moves_per_turn <= self.moves_used):
+                    self.moves_used = 0
+                    print("NEXT BALL")
+                    balls_no_ghosts = []
+                    for ball in self.balls:
+                        if(ball.moves_per_turn != 0):
+                            balls_no_ghosts.append(ball)
+                    self.balls = copy(balls_no_ghosts)
+
+                    index = (self.balls.index(self.current_ball) + 1) % len(self.balls)
+                    self.current_ball = self.balls[index]
+
             self.current_ball.start_turn()
 
     def priority_balls(self):
