@@ -199,6 +199,7 @@ class Ball(PhysicsObject):
                 self.is_simulating = False
                 self.pose = _hold_pose
                 self.velocity = _hold_velocity
+                self.collide_with_other_ball_2 = lambda *args: Ball.collide_with_other_ball_2(self, *args)
                 #.has_collided = True
                 if result==0:
                     result= 0.01
