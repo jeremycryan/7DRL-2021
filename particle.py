@@ -230,3 +230,40 @@ class PreBall(Particle):
 
         surf.blit(orb, (x - orb.get_width()//2, y - orb.get_height()//2 - self.get_height()))
 
+class GravityParticle(Particle):
+    def __init__(self, game, ball):
+        super().__init__(game)
+        self.pose_rel = Pose((0, 0), 0)
+        speed = c.GRAVITY_RADIUS*2 * (ball.scale * 2 - .999)
+        self.velocity = Pose((speed, 0), 0)
+        self.velocity.rotate_position(random.random()*360)
+        self.duration = 0.5
+        self.radius = 4
+        self.ball = ball
+
+    def get_scale(self):
+        x = self.through()
+        return -(2*x - 1)**2 + 1
+
+    def get_alpha(self):
+        return 255
+
+    def get_color(self):
+        return (100, 40, 110)
+
+    def update(self, dt, events):
+        super().update(dt, events)
+        self.pose_rel += self.velocity*dt
+
+    def draw(self, surf, offset=(0, 0)):
+        if self.velocity.magnitude() <= 5:
+            return
+        r = int(self.radius*self.get_scale())
+        orb = pygame.Surface((r*3, r*2))
+        orb.fill(c.BLACK)
+        orb.set_colorkey(c.BLACK)
+        pygame.draw.ellipse(orb, self.get_color(), (0, 0, r*3, r*2), r)
+        orb = pygame.transform.rotate(orb, -math.atan2(self.velocity.y, self.velocity.x)*180/math.pi)
+        surf.blit(orb,
+                  (self.ball.pose.x + self.pose_rel.x + offset[0] - orb.get_width()//2, self.ball.pose.y + self.pose_rel.y + offset[1] - orb.get_height()//2),
+                  special_flags=pygame.BLEND_ADD)

@@ -858,9 +858,9 @@ class Ball(PhysicsObject):
 
         magnitude = self.velocity.magnitude()
         other_new = to_other.copy()
-        other_new.scale_to(magnitude * energy_transfer)
+        other_new.scale_to(magnitude * energy_transfer * 0.8)
         vel_change = other_new.copy()
-        vel_change.scale_to(magnitude * (1 - energy_transfer))
+        vel_change.scale_to(magnitude * (1 - energy_transfer) * 0.8)
         other.velocity = other_new
         print(self.velocity)
         self.velocity -= vel_change
