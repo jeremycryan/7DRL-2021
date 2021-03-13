@@ -51,6 +51,12 @@ class Ball(PhysicsObject):
         self.has_collided = False
         self.collided_with = None
         self.is_simulating = False
+        self.power_boost_factor = 1
+        self.intelligence_mult = 1
+        self.inaccuracy = 0
+        self.max_power_reduction = 0
+        self.gravity = 0
+
 
 
     def start_turn(self):
@@ -165,8 +171,8 @@ class Ball(PhysicsObject):
             power = (rando_factor) * ( ((relative_position_player_to_pocket.magnitude() + relative_position.magnitude()) * .2) ) * (90/(90-_angle_for_pow))**.5
             #print((relative_position_player_to_pocket.magnitude() + relative_position.magnitude())*.2)
             #print(power/rando_factor)
-            if(power> 100):
-                power = 100
+            if(power> 100  - self.max_power_reduction):
+                power = 100 - self.max_power_reduction
             if(power< rando_factor * 20):
                 power = rando_factor * 20
             self.knock(self.cue, to_player_degrees - goal_offset_angle, power)
@@ -179,7 +185,7 @@ class Ball(PhysicsObject):
                 _hold_pose = self.pose
                 _hold_velocity = self.velocity
                 self.is_simulating = True
-                result = self.do_prediction_line( (360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*50)
+                result = self.do_prediction_line( (360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*(70-self.max_power_reduction))
                 self.tractor_beam_target = None
                 self.can_collide = True
                 self.is_simulating = False
@@ -191,9 +197,9 @@ class Ball(PhysicsObject):
 
                 #print(type(result))
                 if(type(result) is float):
-                    shot_options.append( ((360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*100, result) )
+                    shot_options.append( ((360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*(70-self.max_power_reduction), result) )
                 else:
-                    shot_options.append( ((360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*100, (result - player.pose)) )
+                    shot_options.append( ((360/prediction_line_count)*i + (360/prediction_line_count) * random.random(), rando_factor*(70-self.max_power_reduction), (result - player.pose)) )
 
                 # if type(shot_options[i][2]) is float:
                 #     print("FLOAT OUTPUT: "+ str(shot_options[i][2]))
@@ -288,6 +294,7 @@ class Ball(PhysicsObject):
                     return
             return
 
+        self.update_in_simulation(dt, events)
         super().update(dt, events)  # update position based on velocity, velocity based on acceleration
 
         #self.drag_continous(dt)
@@ -319,6 +326,29 @@ class Ball(PhysicsObject):
         self.initial_position += (self.velocity-self.rotational_velocity) * dt
         if(self.rotational_velocity.magnitude() < c.MIN_ROTATIONAL_VELOCITY):
             self.rotational_velocity *=0
+
+    def update_in_simulation(self, dt, events):
+
+        if(self.gravity != 0):
+            return
+
+        for ball in self.game.current_scene.balls:
+            if(ball.gravity == 0):
+                continue
+            #print("GRAV TIME")
+            delta_pose = self.pose - ball.pose
+            grav_factor = (1/(delta_pose.magnitude()**2) - (1/(c.GRAVITY_RADIUS**2)))
+            #print("GRAV FACTOR : " +str(grav_factor))
+            #print("DELAT MAG: " + str(delta_pose.magnitude() ))
+
+            if(grav_factor<0):
+                grav_factor = 0
+            #elif(grav_factor> (1/(c.MAX_GRAVITY_AT_RADIUS**2) - (1/(c.GRAVITY_RADIUS**2)))):
+            #    grav_factor = (1/(c.MAX_GRAVITY_AT_RADIUS**2) - (1/(c.GRAVITY_RADIUS**2)))
+            print("GRAV FACTOR : " +str(((grav_factor*ball.mass)/self.mass) * ball.gravity * dt))
+
+            delta_pose.scale_to(1)
+            self.velocity += delta_pose * ((grav_factor*ball.mass)/self.mass) * ball.gravity * dt
 
     def drag(self, dt):
         if(self.velocity.magnitude() > self.max_speed):
@@ -450,7 +480,7 @@ class Ball(PhysicsObject):
             self._did_collide_wall = False
             if (self.velocity.magnitude() > c.MIN_BOUNCE_REDUCTION_SPEED or c.WALL_BOUNCE_FACTOR):
                 self.velocity.scale_to(self.velocity.magnitude() * c.WALL_BOUNCE_FACTOR)
-            self.game.current_scene.shake(8 * self.velocity.magnitude() / 500, pose=self.velocity)
+            self.game.current_scene.shake(8 * self.velocity.magnitude()*self.mass / 500, pose=self.velocity)
 
         # TODO iterate through other balls and call self.collide_with_other_ball if colliding
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
@@ -543,7 +573,7 @@ class Ball(PhysicsObject):
             else:
                 self.pose = interpolated_position
 
-        self.game.current_scene.shake(8 * self.velocity.magnitude()/500, pose=self.velocity)
+        self.game.current_scene.shake(8 * self.velocity.magnitude()*self.mass/500, pose=self.velocity)
 
         #shift pose away from wall
 
@@ -595,7 +625,15 @@ class Ball(PhysicsObject):
         # self.pose += velocity_vector * (offset_required * math.cos(math.atan2(velocity_vector.y-collision_normal.y, velocity_vector.x-collision_normal.x)))
         dot_product_self_norm = collision_normal.x * velocity_vector.x + collision_normal.y * velocity_vector.y;
 
-        angle_vel = math.acos(dot_product_self_norm / (collision_normal.magnitude() * velocity_vector.magnitude()))
+        if(collision_normal.magnitude() * velocity_vector.magnitude() != 0):
+            acos_input = (dot_product_self_norm / (collision_normal.magnitude() * velocity_vector.magnitude()))
+        if acos_input > 1:
+            acos_input = 1
+        elif acos_input < -1:
+            acos_input = -1
+        angle_vel = math.acos(acos_input)
+
+
 
         angle_b = math.asin((math.sin(angle_vel) / (self.radius + other.radius)) * collision_normal_unscaled.magnitude())
         angle_c = math.pi - (angle_b + angle_vel)
@@ -621,7 +659,7 @@ class Ball(PhysicsObject):
         spark_pose = self.pose - (self.pose - other.pose) * .5
         intensity = min(relative_velocity.magnitude()**1.5/3000, 1)
         self.small_spark_explosion((spark_pose.x, spark_pose.y), intensity=relative_velocity.magnitude()**1.5/3000)
-        self.game.current_scene.shake(10 * intensity + 2, other.pose - self.pose)
+        self.game.current_scene.shake(10 * intensity * self.mass*other.mass + 2, other.pose - self.pose)
 
         other_relative_vector = collision_normal
         momemtum = relative_velocity * self.mass
@@ -878,6 +916,8 @@ class Ball(PhysicsObject):
         pass
 
     def knock(self, cue, angle, power):
+        angle += ((random.random()-.5)*2) * self.inaccuracy
+        power *= self.power_boost_factor
         # TODO implement this
         # Angle should be the angle, in degrees counterclockwise from --> right -->
         # Power should be a float from 0-100 indicating how hard you're hitting. This might not map 1:1 to velocity
@@ -996,7 +1036,7 @@ class Ball(PhysicsObject):
         old = player_copy.pose.copy()
         final_position = None
         #print("SIM START    VEL MAG: " + str(player_copy.velocity.magnitude()) )
-        for i in range(c.AI_SIM_ITERATIONS):
+        for i in range(round(c.AI_SIM_ITERATIONS * self.intelligence_mult)):
             #print("SIM VEL MAG: " + str(player_copy.velocity.magnitude()))
             if(c.VARIABLE_SIM_SPEED):
                 near_wall = False
@@ -1019,6 +1059,8 @@ class Ball(PhysicsObject):
                 #mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius + );
             else:
                 sim_update = 1 / (c.AI_SIM_FPS)
+
+            #for self.game.current_scene.balls
 
             self.update(sim_update, [])
             #positions.append(player_copy.pose.copy())
@@ -1153,6 +1195,8 @@ class Shelled(Ball):
         self.can_be_sunk = False
         self.last_velocity = self.velocity.copy()
         self.take_turn = lambda *args: type(self.inner_ball).take_turn(self, *args)
+        self.mass = self.inner_ball.mass
+        self.gravity = self.inner_ball.gravity
 
     def update(self, dt, events):
         self.last_velocity = self.velocity.copy()
@@ -1187,7 +1231,7 @@ class Shelled(Ball):
     def on_being_hit(self, other):
         if not self.turn_in_progress:
             self.sheen_alpha = 150
-            if (self.velocity - self.last_velocity).magnitude() > 200:
+            if (self.velocity - self.last_velocity).magnitude() / self.mass > 200:
                 self.shatter()
 
     def shatter(self):
