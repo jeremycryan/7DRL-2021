@@ -17,13 +17,13 @@ class Ball(PhysicsObject):
         self.mass = 1
         self.color = (255, 0, 0)  # This won't matter once we change drawing code
         super().__init__(game, (x, y), 0)
+        self.surf = pygame.Surface((self.radius*2, self.radius*2))
+        self.surf.set_colorkey(c.MAGENTA)
         self.load_back_surface()
         self.process_back_surface()
         self.generate_overlay()
         self.generate_shading()
         self.generate_shadow()
-        self.surf = pygame.Surface((self.radius*2, self.radius*2))
-        self.surf.set_colorkey(c.MAGENTA)
         self.initial_position = Pose((x, y), 0)
         self.drag_multiplicative = drag_multiplicative
         self.drag_constant = drag_constant
@@ -63,6 +63,7 @@ class Ball(PhysicsObject):
         self.is_fragile = False
         self.only_hit_player = False
         self.moves_per_turn= 1
+        self.until_next_turn = 1  # Only used by 7 ball
 
 
 
@@ -231,7 +232,8 @@ class Ball(PhysicsObject):
         return(_pose)
 
     def process_back_surface(self):
-        self.back_surface = pygame.transform.scale(self.back_surface, (self.radius*4, self.radius*4)).convert()
+        self.surf.set_colorkey(c.MAGENTA)
+        self.back_surface = pygame.transform.scale(self.back_surface, (int(self.radius*4), int(self.radius*4))).convert()
         noise = pygame.image.load(c.image_path("noise.png")).convert()
         x_times = int(self.back_surface.get_width() / noise.get_width()) + 1
         y_times = int(self.back_surface.get_height() / noise.get_height()) + 1
@@ -277,9 +279,10 @@ class Ball(PhysicsObject):
 
     def load_back_surface(self):
         # Load scrolly image
-        self.back_surface = pygame.Surface((self.radius*2, self.radius*2))
-        self.back_surface.fill((50, 80, 255))
         self.back_surface = pygame.image.load(c.image_path(f"{random.choice([1, 2, 3, 4, 5, 6, 7, 8])}_ball.png"))
+
+    def update_seven(self, dt, events):
+        pass
 
     def update(self, dt, events):
         if self.game.current_scene.all_balls_below_speed() and self.turn_in_progress and self.turn_phase == c.AFTER_HIT:
@@ -335,6 +338,9 @@ class Ball(PhysicsObject):
         self.initial_position += (self.velocity-self.rotational_velocity) * dt
         if(self.rotational_velocity.magnitude() < c.MIN_ROTATIONAL_VELOCITY):
             self.rotational_velocity *=0
+
+        self.update_seven(dt, events)
+        self.update_even_if_shelled(dt, events)
 
     def update_in_simulation(self, dt, events):
 
@@ -1224,6 +1230,8 @@ class Ball(PhysicsObject):
         if(self.game.current_scene.current_ball == self):
             self.game.current_scene.current_ball = mr_shell_face
 
+    def update_even_if_shelled(self, dt, events):
+        pass
 
 
 class Shelled(Ball):
@@ -1270,6 +1278,7 @@ class Shelled(Ball):
         if(hasattr(self.inner_ball,"till_next_attack")):
             self.till_next_attack = self.inner_ball.till_next_attack
         self.attack_on_room_spawn = self.inner_ball.attack_on_room_spawn
+        self.update_seven = lambda *args: type(self.inner_ball).update_seven(self, *args)
 
     def gain_shell(self):
         pass
@@ -1284,6 +1293,7 @@ class Shelled(Ball):
             self.inner_ball.pose = self.pose.copy()
             self.sheen_alpha -= 1500*dt
             self.sheen_alpha = max(0, self.sheen_alpha)
+            self.inner_ball.update_even_if_shelled(dt, events)
 
 
     def draw(self, surf, offset=(0, 0)):

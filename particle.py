@@ -332,3 +332,33 @@ class ShieldParticle(Particle):
         x = pose.x + offset[0] - r
         y = pose.y + offset[1] - r
         surface.blit(surf, (x, y))
+
+class HeartBubble(Particle):
+    def __init__(self, game, parent):
+        super().__init__(game)
+        self.game = game
+        self.radius = 12
+        self.duration = 0.75
+
+        speed = parent.radius / self.duration
+        self.pose = Pose((0, 0), 0)
+        self.velocity = Pose((speed, 0), 0)
+        self.velocity.rotate_position(random.random()*360)
+        self.parent = parent
+
+    def get_scale(self):
+        return (1 - self.through(0.7)) * self.parent.scale
+
+    def get_color(self):
+        return (45, 0, 0)
+
+    def update(self, dt, events):
+        super().update(dt, events)
+        self.pose += self.velocity * dt
+
+    def draw(self, surface, offset=(0, 0)):
+        x = self.parent.pose.x + offset[0] + self.pose.x * self.parent.scale
+        y = self.parent.pose.y + offset[1] + self.pose.y * self.parent.scale
+        r = self.get_scale() * self.radius
+
+        pygame.draw.circle(surface, self.get_color(), (x, y), r)

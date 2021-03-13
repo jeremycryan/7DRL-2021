@@ -27,6 +27,7 @@ class LevelScene(Scene):
         self.force_player_next = False
         self.game.exploring.play(-1)
         self.game.combat.play(-1)
+        self.music_started = time.time()
         self.game.combat.set_volume(0)
         self.moves_used = 0
 
@@ -137,6 +138,7 @@ class LevelScene(Scene):
         #self.balls += [Ball(self.game, offset[0] - 200, offset[1] - 140)]
         self.particles += [PreBall(self.game, SevenBall(self.game, offset[0] - 200, offset[1] - 140))]
         self.particles += [PreBall(self.game, ThreeBall(self.game, offset[0] - 200, offset[1] - 0))]
+        self.particles += [PreBall(self.game, BossHeart(self.game, offset[0] + 200, offset[1] - 0))]
 
         self.force_player_next = True
         self.game.combat.set_volume(100)
