@@ -1,0 +1,13 @@
+
+XXXXXXXXXUUXXXXXXXXX
+XP................PX
+X..................X
+X...LL........RR...X
+XP.LLP........PRR.PX
+LLLLL....XX....RRRRR
+LLLLL....XX....RRRRR
+XP.LLP........PLL.PX
+X...LL........LL...X
+X..................X
+XP................PX
+XXXXXXXXXDDXXXXXXXXX

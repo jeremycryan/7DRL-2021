@@ -1,6 +1,6 @@
 
 XXXXXXXXXUUXXXXXXXXX
-XXXX............XXXX
+XXXXP..........XXXXX
 XXXX............XXXX
 XXXX.......XXP..XXXX
 XXXX.......XXX..XXXX
@@ -9,5 +9,5 @@ LLLL..XXX.......RRRR
 XXXX..XXX.......XXXX
 XXXX..PXX.......XXXX
 XXXX............XXXX
-XXXX............XXXX
+XXXXX..........PXXXX
 XXXXXXXXXDDXXXXXXXXX

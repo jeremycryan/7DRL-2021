@@ -28,16 +28,16 @@ class Map(GameObject):
         for room in self.room_iter():
             room.openings = []
 
-        floor_num = self.game.current_floor + 2
-        if(floor_num == 1):
+        floor_num = self.game.current_floor
+        if(floor_num == 1 or floor_num == 2):
             raw_length = 2
             pass
         else:
             raw_length = floor_num
             raw_length = max(raw_length, 3)
             raw_length = min(raw_length, 5)
-            raw_length_min = round((raw_length*(1 - random.random()*.2)) - 1)
-            raw_length_max=  round(raw_length*(1 + random.random()*.2))
+        raw_length_min = round((raw_length*(1 - random.random()*.2)) - 1)
+        raw_length_max=  round(raw_length*(1 + random.random()*.2))
 
 
 
@@ -191,15 +191,17 @@ class Room(GameObject):
     def set_difficulty(self, tutorial_room = False):
         floor_num = self.game.current_floor
         self.base_difficulty = (floor_num**1.25 + 1)* 2
+        if(floor_num == 1):
+            self.base_difficulty = 3
 
         self.waves_remaining = math.log(floor_num**1.5) + random.random()*1 + 1.3
         if(floor_num == 1):
-            self.waves_remaining -= 1
-
-        self.waves_remaining = max(self.waves_remaining, 3)
-        self.waves_remaining *= (1-(random.random()*.4))
-        self.waves_remaining = max(self.waves_remaining, 1)
-        self.waves_remaining = round(self.waves_remaining)
+            self.waves_remaining = round(1+random.random()*1.3)
+        else:
+            self.waves_remaining = max(min(self.waves_remaining, 3), 2)
+            self.waves_remaining *= (1-(random.random()*.4))
+            self.waves_remaining = max(self.waves_remaining, 1)
+            self.waves_remaining = round(self.waves_remaining)
 
         pass
 
@@ -412,6 +414,9 @@ class Room(GameObject):
         #     return
         self.enemies_have_spawned = True
         self.game.current_scene.spawn_balls_first_room()
+    def spawn_boss(self):
+        self.enemies_have_spawned = True
+        self.game.current_scene.spawn_boss()
 
 
 class Tile(GameObject):

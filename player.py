@@ -43,10 +43,14 @@ class Player(Ball):
         if not self.game.in_simulation:
 
             if self.is_completely_in_room() and not current_room.enemies_have_spawned and self.game.current_scene.all_balls_below_speed() and current_room.doors_are_open:
-                if(floor_num == 1 and self.first_spawn):
+                # if(floor_num == 1 and self.first_spawn):
+                #     current_room.doors_close()
+                #     current_room.spawn_enemies_first_room()
+                #     current_room.waves_remaining = 3
+                if(current_room.is_boss_room and floor_num != 1):
                     current_room.doors_close()
-                    current_room.spawn_enemies_first_room()
-                    current_room.waves_remaining = 4
+                    current_room.waves_remaining = 1
+                    current_room.spawn_boss()
                 else:
                     current_room.doors_close()
                     current_room.set_difficulty()
@@ -75,9 +79,9 @@ class Player(Ball):
             self.turn_phase = c.AFTER_HIT
 
         angle = math.atan2(-hit_vector.y, hit_vector.x) * 180/math.pi
-        power = hit_vector.magnitude()*0.5
-        if power > 100:
-            power = 100
+        power = hit_vector.magnitude()*0.55
+        if power > 110:
+            power = 110
         self.velocity *= 0
         self.knock(self.active_cue, angle, power)
 
@@ -99,6 +103,8 @@ class Player(Ball):
 
         traveled = 0
         positions = []
+        velocities = []
+
         old = player_copy.pose.copy()
         final_position = None
         for i in range(c.SIM_ITERATIONS):
@@ -132,6 +138,7 @@ class Player(Ball):
 
             player_copy.update(sim_update, [])
             positions.append(player_copy.pose.copy())
+            velocities.append(player_copy.velocity.magnitude())
             if player_copy.has_collided:
                 final_position = player_copy.pose.copy()
                 break
@@ -152,7 +159,14 @@ class Player(Ball):
         pygame.draw.circle(surf, c.WHITE, (surf.get_width()//2, surf.get_width()//2), surf.get_width()//2)
         alpha = 255
         surf.set_colorkey(c.BLACK)
+        i = -1
         for pose in positions[::1]:
+            i += 1
+            circle_diam = max(3, min(7, (velocities[i]/160)))
+            surf = pygame.Surface((circle_diam, circle_diam))
+            surf.fill(c.BLACK)
+            surf.set_colorkey(c.BLACK)
+            pygame.draw.circle(surf, c.WHITE, (surf.get_width() // 2, surf.get_width() // 2), surf.get_width() // 2)
             surf.set_alpha(alpha)
             screen.blit(surf, (pose.x + offset[0] - surf.get_width()//2, pose.y + offset[1] - surf.get_width()//2))
 

@@ -4,10 +4,10 @@ XP.....XXUUXXXXXXXXX
 X......XXUUXXXXXXXXX
 XXX.....P......XXXXX
 XXX...XXX........XXX
-L.....XXX..........R
-L..........XXX.....R
+L.....XXX.........PR
+LP.........XXX.....R
 XXX........XXX...XXX
 XXXXX......P.....XXX
 XXXXXXXXXDDXX......X
-XPXXXXXXXDDXXXXXXXPX
+XXXXXXXXXDDXX.....PX
 XXXXXXXXXDDXXXXXXXXX

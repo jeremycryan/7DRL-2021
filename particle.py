@@ -144,6 +144,41 @@ class PoofBit(Particle):
 
         pygame.draw.circle(surf, self.get_color(), (x, y), radius)
 
+class ExplosionBit(Particle):
+    def __init__(self, game, x, y):
+        super().__init__(game)
+        self.radius = 37 + random.random()*20
+        self.duration = self.radius * 0.03
+        speed = random.random() * 100 + 80
+        angle = random.random() * 360
+        self.velocity = Pose((speed, 0), 0)
+        self.velocity.rotate_position(angle)
+        self.pose = Pose((x, y), 0)
+        self.color = (140+random.random()*40,90 + random.random()*15,60+ random.random()*30)
+
+    def get_alpha(self):
+        return 255
+
+    def update(self, dt, events):
+        super().update(dt, events)
+        self.radius *= 0.1**dt
+        self.pose += self.velocity * dt
+        self.velocity *= 0.1**dt
+        self.color = (round(self.color[0] * (.2**dt)), round(self.color[1]*(.2**dt)), self.color[2]*(.1**dt))
+
+
+    def get_scale(self):
+        return 1 - self.through(1.5)
+
+    def get_color(self):
+        return self.color
+
+    def draw(self, surf, offset=(0, 0)):
+        x = self.pose.x + offset[0]
+        y = self.pose.y + offset[1]
+        radius = self.radius * self.get_scale()
+
+        pygame.draw.circle(surf, self.get_color(), (x, y), radius)
 
 class WallAppear(PoofBit):
     def __init__(self, game, x, y):
@@ -236,6 +271,7 @@ class PreBall(Particle):
             self.ball.draw(surf, (offset[0], offset[1] - self.get_height()))
 
         surf.blit(orb, (x - orb.get_width()//2, y - orb.get_height()//2 - self.get_height()))
+
 
 class GravityParticle(Particle):
     def __init__(self, game, ball):

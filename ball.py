@@ -5,7 +5,7 @@ from copy import copy
 
 from primitives import PhysicsObject, Pose
 import constants as c
-from particle import Spark, SmokeBit, PoofBit, BubbleBurst
+from particle import Spark, SmokeBit, PoofBit, BubbleBurst, ExplosionBit
 import random
 from cue import BasicCue
 import time
@@ -434,8 +434,10 @@ class Ball(PhysicsObject):
             if mapTile.collidable == False:
                 touching_floor = True
         if((not touching_floor or in_room!=self.game.current_scene.current_room()) and not (self.is_simulating or self.game.in_simulation)):
-            if(not self.is_boss):
+            if(not self.is_boss or not self.is_heart or self.is_player):
                 self.break_ball()
+                return
+            elif self.is_boss and not self.can_collide:
                 return
             else:
                 self.pose = Pose((self.game.current_scene.current_room().center()[0], self.game.current_scene.current_room().center()[1]),0)
@@ -462,7 +464,7 @@ class Ball(PhysicsObject):
                 continue
             if ball.is_player and self.is_player:
                 continue
-            if (self.only_hit_player and not ball.is_player) or (self.is_player and ball.only_hit_player):
+            if (self.only_hit_player and not ball.is_player) or (not self.is_player and ball.only_hit_player):
                 continue
             if not ball.can_collide:
                 continue
@@ -575,7 +577,7 @@ class Ball(PhysicsObject):
             balls.remove(self)
 
     def explode_bomb(self):
-
+        self.make_explosion(self.pose.get_position())
         #JARM ANIMATION HERE
         balls = self.game.current_scene.balls
         #print("FRAGILE")
@@ -1120,6 +1122,16 @@ class Ball(PhysicsObject):
             smoke = PoofBit(self.game, *position)
             self.game.current_scene.floor_particles.append(smoke)
 
+    def make_explosion(self, position, num = 30, size = 100):
+        if(self.is_boss):
+            num = 50
+        if self.game.in_simulation:
+            return
+        for i in range(num):
+            smoke = ExplosionBit(self.game, *position)
+            smoke.pose += Pose((random.random()-.5, random.random()-.5),0)*size
+            self.game.current_scene.floor_particles.append(smoke)
+
     def poof(self, on_land=False):
         if self.game.in_simulation:
             return
@@ -1138,7 +1150,7 @@ class Ball(PhysicsObject):
         self.can_collide = False
         self.target_alpha = 0
         self.target_scale = 0.5
-        if not self.is_player and not (self.game.in_simulation or self.is_simulating) and self.game.current_scene.current_ball.is_player:
+        if not self.is_player and not (self.game.in_simulation or self.is_simulating) and self.game.current_scene.current_ball.is_player and not self.is_heart:
             self.game.current_scene.force_player_next = True
 
     def sink_for_real(self):
@@ -1322,9 +1334,9 @@ class Shelled(Ball):
         self.pose = inner_ball.pose.copy()
 
         self.inner_ball = inner_ball
-        self.radius = self.inner_ball.radius * 1.5
-        if self.radius < c.DEFAULT_BALL_RADIUS * 1.5:
-            self.radius = c.DEFAULT_BALL_RADIUS * 1.5
+        #self.radius = self.inner_ball.radius * 1.5
+        #if self.radius < c.DEFAULT_BALL_RADIUS * 1.5:
+        self.radius = c.DEFAULT_BALL_RADIUS * 1.5
         self.shell_surf = pygame.Surface((self.radius*2, self.radius*2))
         self.shell_surf.fill(c.MAGENTA)
         pygame.draw.circle(self.shell_surf, (200, 220, 255), (self.radius, self.radius), self.radius)
@@ -1350,6 +1362,8 @@ class Shelled(Ball):
         self.mass = self.inner_ball.mass
         self.gravity = self.inner_ball.gravity
         self.moves_per_turn = self.inner_ball.moves_per_turn
+        self.is_heart = self.inner_ball.is_heart
+
 
         self.mass = self.inner_ball.mass
         self.power_boost_factor = self.inner_ball.power_boost_factor

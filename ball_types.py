@@ -44,11 +44,11 @@ class TwoBall(Ball):
     def __init__(self, *args, **kwargs):
         self.do_things_before_init()
         super().__init__(*args, **kwargs)
-        self.power_boost_factor = .8
-        self.mass = self.mass * .75
+        self.power_boost_factor = .7
+        self.mass = self.mass * .7
         self.intelligence_mult = .3
-        self.inaccuracy = 10
-        self.max_power_reduction = 10
+        self.inaccuracy = 12
+        self.max_power_reduction = 20
     def do_things_before_init(self):
         # put code here
         pass
@@ -306,6 +306,9 @@ class GhostBall(Ball):
 class BossBall(Ball):
     def __init__(self, *args, **kwargs):
         self.do_things_before_init()
+
+        self.split = False
+
         super().__init__(*args, **kwargs)
         self.radius = int(c.DEFAULT_BALL_RADIUS * 2.5)
         self.mass = self.mass * 1.5
@@ -314,13 +317,40 @@ class BossBall(Ball):
         self.can_have_shield = False
         self.since_blip = 0
 
-        self.intelligence_mult = 1
-        self.inaccuracy = 10
-        self.moves_per_turn = 3
+        self.intelligence_mult = .5
+
+        if (self.game.current_floor < 3):
+            self.inaccuracy = 15
+        elif (self.game.current_floor < 4):
+            self.inaccuracy = 10
+        elif (self.game.current_floor < 5):
+            self.inaccuracy = 8
+        elif (self.game.current_floor < 6):
+            self.inaccuracy = 4
+        else:
+            self.inaccuracy = 0
+
+        if (self.game.current_floor < 3):
+            self.moves_per_turn = 2
+        elif(self.game.current_floor<4):
+            self.moves_per_turn = 3
+        elif(self.game.current_floor<6):
+            self.moves_per_turn = 4
+        else:
+            self.moves_per_turn = 5
         self.did_grav_attack = False
-        self.current_health = 2
+        if (self.game.current_floor < 4):
+            self.starting_health = 2
+        elif (self.game.current_floor < 5):
+            self.starting_health = 3
+        else:
+            self.starting_health = 4
+
+        self.current_health = self.starting_health
+        self.health_balls = []
         self.is_boss = True
         self.can_be_sunk = False
+        self.steps_to_reform = 0
 
         #self.attack_cooldown = False
         self.attack_on_room_spawn = True
@@ -332,23 +362,59 @@ class BossBall(Ball):
         self.generate_shadow()
         self.generate_shading()
 
+        #CREATE HEALTH BALLS
+        health_ball_count = min(self.game.current_floor, 5)
+
+
+        for i in range(health_ball_count):
+            created_ball = BossHeart(self.game,self.pose.x,self.pose.y)
+            self.health_balls.append(created_ball)
+
     def take_turn(self):
-        self.mass *= 3
+
+
         self.gravity = 0
 
-        # if(self.attack_cooldown):
-        #     self.attack_cooldown = False
-        #     self.turn_phase = c.AFTER_HIT
-        #     self.turn_in_progress = True
-        #     return()
         balls = copy(self.game.current_scene.balls);
         summon_count = 0
         bomb_count = 0
+        heart_count = 0
         for ball in balls:
             if(ball.boss_summoned):
                 summon_count += 1
             if(ball.is_bomb):
                 bomb_count += 1
+            if(ball.is_heart):
+                if(ball.sunk):
+                    self.health_balls.remove(ball)
+                    pass
+                else:
+                    heart_count += 1
+
+        if(heart_count<= 0 and self.split):
+            self.pose = Pose((99999,99999),0)
+            self.break_ball()
+
+            balls  = self.game.current_scene.balls
+            for ball in balls:
+                if(ball.boss_summoned):
+                    ball.break_ball()
+
+            self.turn_phase = c.AFTER_HIT
+            self.turn_in_progress = True
+            return
+
+
+        if (self.split):
+            if(self.steps_to_reform<=0):
+                self.reform()
+                pass
+            self.steps_to_reform -= 1
+            self.turn_phase = c.AFTER_HIT
+            self.turn_in_progress = True
+            return
+
+        self.mass *= 3
 
         to_room_center = self.pose - Pose((self.game.current_scene.current_room().center()[0], self.game.current_scene.current_room().center()[1]),0)
         if self.game.current_scene.moves_used<self.moves_per_turn-1 and bomb_count<= 0:
@@ -525,15 +591,52 @@ class BossBall(Ball):
         Ball.take_turn(self)
         self.power_boost_factor *= -10
 
+    def reform(self):
+        #ANIMATION OF SOME KIND (VERSE BALL 7 SHIELDS???)
+        balls = copy(self.game.current_scene.balls);
+        new_balls = []
+        for ball in balls:
+            if(not ball.is_heart):
+                new_balls.append(ball)
+        self.game.current_scene.balls = new_balls
+
+        self.split = False
+        self.can_collide = True
+        spawn_location = self.game.current_scene.current_room().find_spawn_locations(1)
+        self.pose = Pose((spawn_location[0][0], spawn_location[0][1]),0)
+
+        pass
     def do_things_before_init(self):
         # put code here
         pass
 
     def load_back_surface(self):
-        self.back_surface = pygame.image.load(c.image_path(f"6_ball.png"))
+        self.back_surface = pygame.image.load(c.image_path(f"8_ball.png"))
 
     def update(self, dt, events):
         super().update(dt, events)
+
+        if(self.current_health<=0 and not self.split):
+            self.split = True
+            self.pose = Pose((99999,99999),0)
+            self.current_health = self.starting_health
+            self.gravity = 0
+            self.steps_to_reform = (2*self.moves_per_turn)
+
+            for health_ball in self.health_balls:
+                spawn_locations = self.game.current_scene.current_room().find_spawn_locations(1)
+
+                if (spawn_locations != False):
+                    health_ball.pose = Pose((spawn_locations[0][0], spawn_locations[0][1]),0)
+                    health_ball.x = spawn_locations[0][0]
+                    health_ball.y = spawn_locations[0][1]
+                    shelled_heart = Shelled(self.game, health_ball)
+                    self.game.current_scene.particles += [PreBall(self.game, shelled_heart)]
+
+        if(self.split):
+            self.can_collide = False
+            self.velocity *= 0
+
         if not self.game.in_simulation and not self.sunk and self.gravity != 0:
             self.since_blip += dt
             while self.since_blip > 0.002:
@@ -541,10 +644,15 @@ class BossBall(Ball):
                 self.game.current_scene.particles.append(BossGravityParticle(self.game, self))
 
     def draw(self, screen, offset=(0, 0)):
-        if not self.sunk and self.gravity != 0:
-            r = int((c.BOSS_GRAVITY_RADIUS + math.sin(time.time()*12)*3) * (self.scale * 2 - .999))
-            pygame.draw.circle(screen, (50, 50, 50), (self.pose.x + offset[0], self.pose.y + offset[1]), r, 1)
-        super().draw(screen, offset)
+        if(not self.split):
+            if not self.sunk and self.gravity != 0:
+                r = int((c.BOSS_GRAVITY_RADIUS + math.sin(time.time()*12)*3) * (self.scale * 2 - .999))
+                pygame.draw.circle(screen, (50, 50, 50), (self.pose.x + offset[0], self.pose.y + offset[1]), r, 1)
+            super().draw(screen, offset)
+
+    def generate_shadow(self):
+        if not self.split:
+            super().generate_shadow()
 
 class ExampleBall(Ball):
     def __init__(self, *args, **kwargs):
@@ -562,7 +670,13 @@ class BossHeart(Ball):
         super().__init__(*args, **kwargs)
 
         self.radius = self.radius * 1
+
+
+        self.power_boost_factor = .8
         self.mass = self.mass * .8
+        self.intelligence_mult = .3
+        self.inaccuracy = 10
+        self.max_power_reduction = 0
 
         self.heart = pygame.transform.scale(pygame.image.load(c.image_path("heart.png")), (self.radius, self.radius))
         self.behind = pygame.Surface((self.radius*2, self.radius*2))
@@ -689,6 +803,9 @@ class BombBall(Ball):
         boss_alive = False
         for ball in balls:
             if(ball.is_boss):
+                if(ball.split):
+                    self.explode_bomb()
+                    self.break_ball()
                 boss_alive = True
 
         if(not boss_alive):
