@@ -416,12 +416,13 @@ class Ball(PhysicsObject):
 
     def update_collisions(self):
 
-        mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1);
+        mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1)
+        in_room = self.game.current_scene.map.get_at_pixels(self.pose.x, self.pose.y)
         touching_floor = False
         for mapTile in mapTiles:
             if mapTile.collidable == False:
                 touching_floor = True
-        if(not touching_floor and not (self.is_simulating or self.game.in_simulation)):
+        if((not touching_floor or in_room!=self.game.current_scene.current_room()) and not (self.is_simulating or self.game.in_simulation)):
             self.break_ball()
             return
 
