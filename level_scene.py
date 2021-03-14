@@ -430,6 +430,9 @@ class LevelScene(Scene):
                     self.particles += [PreBall(self.game, SixBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
                 if (summon_list[i] == 7):
                     self.particles += [PreBall(self.game, SevenBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 8):
+                    self.particles += [PreBall(self.game, BossBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+
 
 
         else:

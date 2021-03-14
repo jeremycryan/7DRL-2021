@@ -66,7 +66,10 @@ class Ball(PhysicsObject):
         self.moves_per_turn= 1
         self.until_next_turn = 1  # Only used by 7 ball
         self.collision_radius = self.radius
-
+        self.is_bomb = False
+        self.is_heart = False
+        self.is_ghost = False
+        self.boss_summoned = False
 
 
     def start_turn(self):
@@ -349,6 +352,7 @@ class Ball(PhysicsObject):
 
     def update_in_simulation(self, dt, events):
 
+
         if(self.gravity != 0):
             return
 
@@ -357,7 +361,10 @@ class Ball(PhysicsObject):
                 continue
             #print("GRAV TIME")
             delta_pose = self.pose - ball.pose
-            grav_factor = (1/(delta_pose.magnitude()**2) - (1/(c.GRAVITY_RADIUS**2)))
+            if(not ball.is_boss):
+                grav_factor = (1/(delta_pose.magnitude()**2) - (1/(c.GRAVITY_RADIUS**2)))
+            else:
+                grav_factor = (1/(delta_pose.magnitude()**2) - (1/(c.BOSS_GRAVITY_RADIUS**2)))
             #print("GRAV FACTOR : " +str(grav_factor))
             #print("DELAT MAG: " + str(delta_pose.magnitude() ))
 
@@ -416,14 +423,23 @@ class Ball(PhysicsObject):
 
     def update_collisions(self):
 
-        mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1);
+        mapTiles = self.game.current_scene.map.tiles_near(self.pose, self.radius*1)
+        try:
+            in_room = self.game.current_scene.map.get_at_pixels(self.pose.x, self.pose.y)
+        except:
+            in_room = None
+            pass
         touching_floor = False
         for mapTile in mapTiles:
             if mapTile.collidable == False:
                 touching_floor = True
-        if(not touching_floor and not (self.is_simulating or self.game.in_simulation)):
-            self.break_ball()
-            return
+        if((not touching_floor or in_room!=self.game.current_scene.current_room()) and not (self.is_simulating or self.game.in_simulation)):
+            if(not self.is_boss):
+                self.break_ball()
+                return
+            else:
+                self.pose = Pose((self.game.current_scene.current_room().center()[0], self.game.current_scene.current_room().center()[1]),0)
+                return
 
 
 
@@ -467,6 +483,11 @@ class Ball(PhysicsObject):
                 self.collide_with_other_ball_2(ball)
                 if(ball.is_fragile):
                     ball.break_ball()
+
+                if (ball.is_bomb and self.is_boss):
+                    self.bomb_boss(ball)
+                elif (ball.is_boss and self.is_bomb):
+                    ball.bomb_boss(self)
                 #ball.collide_with_other_ball_2(self)
                 break
         #print("update  # mapTiles: ")
@@ -552,6 +573,35 @@ class Ball(PhysicsObject):
             self.game.current_scene.current_ball = self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]
         if(self in self.game.current_scene.balls):
             balls.remove(self)
+
+    def explode_bomb(self):
+
+        #JARM ANIMATION HERE
+        balls = self.game.current_scene.balls
+        #print("FRAGILE")
+        if self.game.current_scene.current_ball == self:# and self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]:
+            self.turn_phase = c.AFTER_HIT
+            print("INNER FRAGILE")
+            self.game.current_scene.current_ball.turn_in_progress = False
+            self.game.current_scene.current_ball = self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]
+        if(self in self.game.current_scene.balls):
+            balls.remove(self)
+
+    def bomb_boss(self, bomb_ball):
+        bomb_ball.explode_bomb()
+        self.current_health -= 1
+
+        #JARM ANIMATION HERE
+        balls = self.game.current_scene.balls
+        #print("FRAGILE")
+        if self.game.current_scene.current_ball == self:# and self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]:
+            self.turn_phase = c.AFTER_HIT
+            print("INNER FRAGILE")
+            self.game.current_scene.current_ball.turn_in_progress = False
+            self.game.current_scene.current_ball = self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]
+        if(self in self.game.current_scene.balls):
+            balls.remove(self)
+
     def do_collision(self, mapTile, interpolate_checked = False):
 
 
@@ -1059,6 +1109,8 @@ class Ball(PhysicsObject):
             self.game.current_scene.particles.append(spark)
 
     def make_smoke(self, position, num):
+        if (self.is_ghost):
+            num = round(.3*num)
         if self.game.in_simulation:
             return
         for i in range(num):
@@ -1067,6 +1119,8 @@ class Ball(PhysicsObject):
             self.game.current_scene.floor_particles.append(smoke)
 
     def make_poof(self, position, num):
+        if(self.is_ghost):
+            num = 4
         if self.game.in_simulation:
             return
         for i in range(num):

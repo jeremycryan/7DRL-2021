@@ -309,11 +309,11 @@ class Room(GameObject):
         room_x = self.x * c.ROOM_WIDTH_TILES
         room_y = self.y * c.ROOM_HEIGHT_TILES
         spawn_locations = []
-        max_iterations = 2000
+        max_iterations = 3000
 
-        while(len(spawn_locations)< spawn_count):
+        iterations = 0
+        while(len(spawn_locations)< spawn_count and iterations<max_iterations):
             found = False
-            iterations = 0
             while(not found and iterations<max_iterations):
                 iterations += 1
                 found = True
@@ -339,10 +339,10 @@ class Room(GameObject):
                         if(tile_key == c.POCKET or tile_key == c.UP_WALL or tile_key == c.DOWN_WALL or tile_key == c.LEFT_WALL or tile_key == c.RIGHT_WALL or tile_key == c.WALL):
                             found = False
                             break
-            if(iterations==1):
-                return False
-            spawn_locations.append(( ( (x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2  )  ))
 
+            spawn_locations.append(( ( (x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2  )  ))
+        if (len(spawn_locations) == 0):
+            return False
         return (spawn_locations)
 
     def get_at_pixels(self, x, y):
