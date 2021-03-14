@@ -67,7 +67,7 @@ class Pocket(GameObject):
 class NextFloorPocket(Pocket):
     def __init__(self, game, room):
         super().__init__(game, room.get_at(0, 0))
-        self.radius = c.TILE_SIZE * 2**0.5 / 2
+        self.radius = 100
         self.surf = pygame.image.load(c.image_path("hole.png"))
         self.surf.set_colorkey(c.WHITE)
         self.surf = pygame.transform.scale(self.surf, (200, 200))
