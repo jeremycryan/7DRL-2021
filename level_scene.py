@@ -197,5 +197,54 @@ class LevelScene(Scene):
         self.game.combat.set_volume(100)
         self.game.exploring.set_volume(0)
 
+    def spawn_balls_first_room(self):
+
+        print("TUTORIAL ROOM")
+        self.current_room().waves_remaining -= 1
+        floor_num = self.game.current_floor
+
+        difficulty = self.current_room().base_difficulty * (1 - ((self.current_room().waves_remaining)*.15))
+        summon_list = []
+
+        if(self.current_room().waves_remaining == 2):
+            summon_list.append(1)
+            pass
+        if(self.current_room().waves_remaining == 1):
+            summon_list.append(2)
+            summon_list.append(1)
+            pass
+
+
+        offset = self.current_room().center()
+        #self.balls += [Ball(self.game, offset[0] - 200, offset[1] - 140)]
+        spawn_locations = self.current_room().find_spawn_locations(len(summon_list))
+        print("SPAWNING" + str(summon_list))
+
+        if(spawn_locations != False):
+            for i in range(0,len(spawn_locations)):
+                if(summon_list[i] == 1):
+                    self.particles += [PreBall(self.game, OneBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 2):
+                    self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 3):
+                    self.particles += [PreBall(self.game, ThreeBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 4):
+                    self.particles += [PreBall(self.game, FourBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 5):
+                    self.particles += [PreBall(self.game, FiveBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 6):
+                    self.particles += [PreBall(self.game, SixBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 7):
+                    self.particles += [PreBall(self.game, SevenBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+
+
+        else:
+            print("SPAWNING FAILED")
+
+        self.force_player_next = True
+        self.game.combat.set_volume(100)
+        self.game.exploring.set_volume(0)
+
+
     def current_room(self):
         return self.map.get_at_pixels(*self.player.pose.get_position())

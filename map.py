@@ -371,6 +371,11 @@ class Room(GameObject):
         #     return
         self.enemies_have_spawned = True
         self.game.current_scene.spawn_balls()
+    def spawn_enemies_first_room(self):
+        # if self.enemies_have_spawned:
+        #     return
+        self.enemies_have_spawned = True
+        self.game.current_scene.spawn_balls_first_room()
 
 
 class Tile(GameObject):
