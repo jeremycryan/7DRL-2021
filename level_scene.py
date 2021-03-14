@@ -56,7 +56,7 @@ class LevelScene(Scene):
                     for ball in self.balls:
                         if(ball.moves_per_turn != 0):
                             balls_no_ghosts.append(ball)
-                    if(len(balls_no_ghosts)== 0):
+                    if(len(balls_no_ghosts)!= 0):
                         index = (self.balls.index(self.current_ball) + 1) % len(self.balls)
                         self.current_ball = self.balls[index]
                     else:
@@ -145,16 +145,55 @@ class LevelScene(Scene):
         return False
 
     def spawn_balls(self):
+
+        self.current_room().waves_remaining -= 1
+        floor_num = self.game.current_floor
+
+        difficulty = self.current_room().base_difficulty * (1 - ((self.current_room().waves_remaining)*.15))
+        summon_list = []
+
+        while(difficulty>0):
+            if(floor_num == 1):
+                try_summon = random.randint(1,4)
+            elif (floor_num == 2):
+                try_summon = random.randint(1, 6)
+            else:
+                try_summon = random.randint(1,7)
+
+            if(difficulty - c.DIFFICULTY_LOOKUP[try_summon - 1] >= -1):
+                difficulty -= c.DIFFICULTY_LOOKUP[try_summon - 1]
+                summon_list.append(try_summon)
+            else:
+                print("FAIL DIFF = " + str(difficulty - c.DIFFICULTY_LOOKUP[try_summon] ) + " attempt on : " + str(try_summon))
+
+
+        print(len(summon_list))
+        summon_list.sort(key=lambda summon: c.DIFFICULTY_LOOKUP[summon] * -1)
+        print(len(summon_list))
+
         offset = self.current_room().center()
         #self.balls += [Ball(self.game, offset[0] - 200, offset[1] - 140)]
-        spawn_locations = self.current_room().find_spawn_locations(3)
-        print("SPAWNING" + str(spawn_locations))
+        spawn_locations = self.current_room().find_spawn_locations(len(summon_list))
+        print("SPAWNING" + str(summon_list))
 
         if(spawn_locations != False):
-            print(spawn_locations[0][0])
-            self.particles += [PreBall(self.game, SixBall(self.game, spawn_locations[0][0], spawn_locations[0][1]))]
-            self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[1][0], spawn_locations[1][1]))]
-            self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[2][0], spawn_locations[2][1]))]
+            for i in range(0,len(spawn_locations)):
+                if(summon_list[i] == 1):
+                    self.particles += [PreBall(self.game, OneBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 2):
+                    self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 3):
+                    self.particles += [PreBall(self.game, ThreeBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 4):
+                    self.particles += [PreBall(self.game, FourBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 5):
+                    self.particles += [PreBall(self.game, FiveBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 6):
+                    self.particles += [PreBall(self.game, SixBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if (summon_list[i] == 7):
+                    self.particles += [PreBall(self.game, SevenBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+
+
         else:
             print("SPAWNING FAILED")
 
