@@ -5,7 +5,7 @@ import math
 
 from primitives import GameObject, Pose
 import constants as c
-from pocket import Pocket
+from pocket import Pocket, NextFloorPocket
 from particle import WallAppear
 
 
@@ -33,6 +33,8 @@ class Map(GameObject):
 
     def make_branch(self, start, min_length=1, max_length=8, branch_prob=0.3, master=False):
         if max_length <= 0:
+            if master:
+                start.become_boss_room()
             return
         if not master and (random.random() < 1/(max_length - min_length)):
             return
@@ -42,6 +44,8 @@ class Map(GameObject):
                 open_neighbors.append(neighbor)
 
         if not len(open_neighbors):
+            if master:
+                start.become_boss_room()
             return
 
         next = random.choice(open_neighbors)
@@ -159,6 +163,7 @@ class Room(GameObject):
         self.enemies_have_spawned = False
         self.doors_are_open = True
         self.generated = False
+        self.is_boss_room = False
         self.waves_remaining = 1
         self.base_difficulty = 1
 
@@ -238,6 +243,13 @@ class Room(GameObject):
     def become_spawn_room(self):
         self.populate_from_path(c.room_path("spawn.txt"))
 
+    def become_boss_room(self):
+        openings = self.openings
+        self.populate_from_path(c.room_path("boss.txt"))
+        self.openings = openings
+        self.is_boss_room = True
+        self.pockets.append(NextFloorPocket(self.game, self))
+
     def populate_from_path(self, path):
         self.pockets = []
         with open(path) as f:
@@ -316,9 +328,8 @@ class Room(GameObject):
         return self.get_at(x/c.TILE_SIZE, y/c.TILE_SIZE)
 
     def update(self, dt, events):
-        if self is self.game.current_scene.current_room:
-            for pocket in self.pockets:
-                pocket.update(dt, events)
+        for pocket in self.pockets:
+            pocket.update(dt, events)
         # for tile in self.tile_iter():
         #     tile.update(dt, events)
 
@@ -423,6 +434,21 @@ class Tile(GameObject):
             for i in range(20):
                 self.game.current_scene.particles.append(WallAppear(self.game, (self.x+0.5)*c.TILE_SIZE, (self.y+0.5)*c.TILE_SIZE))
 
+    def neighbors(self):
+        n = {c.UP: None, c.DOWN: None, c.RIGHT: None, c.LEFT: None}
+        if self.parent:
+            x = self.x % c.ROOM_WIDTH_TILES
+            y = self.y % c.ROOM_HEIGHT_TILES
+            if x > 0:
+                n[c.LEFT] = self.parent.tiles[y][x - 1]
+            if x < c.ROOM_WIDTH_TILES - 1:
+                n[c.RIGHT] = self.parent.tiles[y][x + 1]
+            if y > 0:
+                n[c.UP] = self.parent.tiles[y - 1][x]
+            if y < c.ROOM_HEIGHT_TILES - 1:
+                n[c.DOWN] = self.parent.tiles[y + 1][x]
+        return n
+
     def doors_open(self):
         was_collidable = self.collidable
 
@@ -448,7 +474,7 @@ class Tile(GameObject):
     def generate_surface(self):
         self.surface = pygame.Surface((c.TILE_SIZE, c.TILE_SIZE))
         if self.key in [c.EMPTY, c.POCKET, c.LEFT_WALL, c.RIGHT_WALL, c.DOWN_WALL, c.UP_WALL] and self.collidable == False:
-            self.surface.fill((30, 80, 30))
+            self.surface = pygame.image.load(c.image_path("felt.png"))
         else:
             self.surface.fill(c.BLACK)
 
@@ -463,7 +489,6 @@ class Tile(GameObject):
             surface = pygame.image.load(c.image_path("down_wall.png"))
 
         if surface:
-            surface.set_colorkey(c.WHITE)
             self.surface.blit(surface, (0, 0))
         surface = None
 
@@ -479,9 +504,28 @@ class Tile(GameObject):
             surface = pygame.image.load(c.image_path("tr_corner.png"))
 
         if surface:
-            self.surface.fill((30, 80, 30))
+            self.surface = pygame.image.load(c.image_path("felt.png")).convert()
             surface.set_colorkey(c.WHITE)
             self.surface.blit(surface, (0, 0))
+
+        surface = None
+        neighbors = self.neighbors()
+        if neighbors[c.UP] and neighbors[c.UP].left_bumper:
+            if neighbors[c.LEFT] and neighbors[c.LEFT].up_bumper:
+                surface = pygame.image.load(c.image_path("br_inner.png"))
+        if neighbors[c.UP] and neighbors[c.UP].right_bumper:
+            if neighbors[c.RIGHT] and neighbors[c.RIGHT].up_bumper:
+                surface = pygame.image.load(c.image_path("bl_inner.png"))
+        if neighbors[c.DOWN] and neighbors[c.DOWN].left_bumper:
+            if neighbors[c.LEFT] and neighbors[c.LEFT].down_bumper:
+                surface = pygame.image.load(c.image_path("tr_inner.png"))
+        if neighbors[c.DOWN] and neighbors[c.DOWN].right_bumper:
+            if neighbors[c.RIGHT] and neighbors[c.RIGHT].down_bumper:
+                surface = pygame.image.load(c.image_path("tl_inner.png"))
+        if surface:
+            self.surface.blit(surface, (0, 0))
+
+        self.surface = self.surface.convert()
 
     def draw(self, surface, offset=(0, 0)):
         x = self.x * c.TILE_SIZE + offset[0]
@@ -489,7 +533,7 @@ class Tile(GameObject):
         if x < -c.TILE_SIZE or x > c.WINDOW_WIDTH or y < -c.TILE_SIZE or y > c.WINDOW_HEIGHT:
             return
 
-        self.generate_surface()
+        #self.generate_surface()
 
         surface.blit(self.surface, (x, y))
 
