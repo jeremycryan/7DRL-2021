@@ -32,6 +32,12 @@ class LevelScene(Scene):
         self.black.set_alpha(self.black_alpha)
         self.black_target_alpha = 0
 
+        self.place_circle = pygame.Surface((c.DEFAULT_BALL_RADIUS*2, c.DEFAULT_BALL_RADIUS*2))
+        self.place_circle.fill(c.BLACK)
+        pygame.draw.circle(self.place_circle, c.WHITE, (c.DEFAULT_BALL_RADIUS, c.DEFAULT_BALL_RADIUS), c.DEFAULT_BALL_RADIUS)
+        self.place_circle.set_alpha(70)
+        self.place_circle.set_colorkey(c.BLACK)
+
         if not self.game.music_started:
             self.game.exploring.play(-1)
             self.game.combat.play(-1)
@@ -43,6 +49,9 @@ class LevelScene(Scene):
         self.moves_used = 0
         self.boss_is_dead = False
         self.player_advancing = False
+
+        self.life_icon = pygame.image.load(c.image_path("life_icon.png"))
+        self.empty_life_icon = pygame.image.load(c.image_path("life_icon_empty.png"))
 
     def shake(self, amt, pose=None):
         if not self.game.in_simulation:
@@ -56,7 +65,7 @@ class LevelScene(Scene):
         self.black_target_alpha = 255
 
     def update_current_ball(self):
-        if self.player_advancing:
+        if self.player_advancing or self.player.sunk:
             return
         if self.balls_are_spawning() or self.shields_are_spawning():
             return
@@ -110,9 +119,34 @@ class LevelScene(Scene):
                 return False
         return True
 
+    def check_click(self, events):
+        if not self.player.sunk:
+            return
+
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:
+                    self.player.sunk = False
+                    self.player.tractor_beam_target = None
+                    self.player.velocity = Pose((0, 0), 0)
+                    self.player.scale = 1
+                    self.player.alpha = 255
+                    self.player.target_scale = 1
+                    self.player.target_alpha = 255
+                    self.player.can_collide = True
+                    self.player.has_poofed = False
+                    mpos = pygame.mouse.get_pos()
+                    x = -(self.camera.add_offset((0, 0))[0]) + mpos[0]
+                    y = -(self.camera.add_offset((0, 0))[1]) + mpos[1]
+                    self.player.pose.x = x
+                    self.player.pose.y = y
+                    self.particles.append(PreBall(self.game, self.player))
+
     def update(self, dt, events):
         if self.current_room().is_boss_room:
             self.boss_is_dead = True
+
+        self.check_click(events)
 
         for ball in self.balls:
             ball._did_collide = False;
@@ -139,6 +173,10 @@ class LevelScene(Scene):
             self.game.combat.set_volume(0)
             self.game.exploring.set_volume(1)
 
+        if self.player.sunk:
+            self.force_player_next = True
+            self.player.scale = 1
+
         if self.black_alpha > self.black_target_alpha:
             self.black_alpha = max(self.black_target_alpha, self.black_alpha - 800*dt)
         else:
@@ -161,9 +199,22 @@ class LevelScene(Scene):
         for particle in self.particles:
             particle.draw(surface, offset=offset)
 
+        self.draw_lives(surface, offset=offset)
+
+        self.draw_drop_preview(surface)
+
         if self.black_alpha > 0:
             self.black.set_alpha(self.black_alpha)
             surface.blit(self.black, (0, 0))
+
+    def draw_drop_preview(self, surface, offset=(0, 0)):
+        if not self.player.sunk:
+            return
+
+        mpos = pygame.mouse.get_pos()
+        x = mpos[0] + offset[0] - self.place_circle.get_width()//2
+        y = mpos[1] + offset[1] - self.place_circle.get_height()//2
+        surface.blit(self.place_circle, (x, y))
 
     def balls_are_spawning(self):
         for particle in self.particles:
@@ -329,6 +380,17 @@ class LevelScene(Scene):
 
     def current_room(self):
         return self.map.get_at_pixels(*self.player.pose.get_position())
+
+    def draw_lives(self, screen, offset=(0, 0)):
+        life_spacing = 20
+        x = int(c.WINDOW_WIDTH/2 - self.life_icon.get_width()/2 - life_spacing * (self.game.player_max_lives - 1) / 2)
+        y = 20
+        for i in list(range(self.game.player_max_lives))[::-1]:
+            surface = self.life_icon
+            if i >= self.game.player_lives:
+                surface = self.empty_life_icon
+            screen.blit(surface, (x + i*life_spacing, y))
+
 
     def next_scene(self):
         self.game.current_floor += 1

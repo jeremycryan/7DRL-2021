@@ -21,7 +21,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.in_simulation = False
-        self.player_lives = 3
+        self.player_lives = 2
         self.player_max_lives = 3
         self.music_started = None
 
@@ -51,7 +51,7 @@ class Game:
 
     def into_pocket(self):
         to_play = random.choice([self.into_pocket_a, self.into_pocket_b, self.into_pocket_c])
-        to_play.set_volume(0.5)
+        to_play.set_volume(0.3)
         to_play.play()
 
     def balls_hit(self, intensity):
