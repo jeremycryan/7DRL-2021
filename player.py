@@ -46,7 +46,7 @@ class Player(Ball):
                 if(floor_num == 1 and self.first_spawn):
                     current_room.doors_close()
                     current_room.spawn_enemies_first_room()
-                    current_room.waves_remaining = 3
+                    current_room.waves_remaining = 4
                 else:
                     current_room.doors_close()
                     current_room.set_difficulty()
