@@ -256,7 +256,7 @@ class GravityParticle(Particle):
         return 255
 
     def get_color(self):
-        return (100, 40, 110)
+        return (180, 30, 170)
 
     def update(self, dt, events):
         super().update(dt, events)

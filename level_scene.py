@@ -203,3 +203,6 @@ class LevelScene(Scene):
 
     def current_room(self):
         return self.map.get_at_pixels(*self.player.pose.get_position())
+
+    def next_scene(self):
+        return LevelScene(self.game)

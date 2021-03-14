@@ -88,6 +88,11 @@ class NextFloorPocket(Pocket):
                 self.scale += dt
                 self.scale = min(1, self.scale)
 
+    def swallow(self, ball):
+        super().swallow(ball)
+        if ball is self.game.current_scene.player and not self.game.in_simulation:
+            self.game.current_scene.is_over = True
+
     def draw(self, surf, offset=(0, 0)):
         if not self.hungry:
             return

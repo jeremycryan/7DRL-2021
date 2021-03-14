@@ -85,7 +85,7 @@ class FourBall(Ball):
     def draw(self, screen, offset=(0, 0)):
         if not self.sunk:
             r = int((c.GRAVITY_RADIUS + math.sin(time.time()*12)*3) * (self.scale * 2 - .999))
-            pygame.draw.circle(screen, (150, 50, 160), (self.pose.x + offset[0], self.pose.y + offset[1]), r, 1)
+            pygame.draw.circle(screen, (200, 50, 185), (self.pose.x + offset[0], self.pose.y + offset[1]), r, 1)
         super().draw(screen, offset)
 
 class ThreeBall(Ball):
