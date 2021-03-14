@@ -20,7 +20,7 @@ class OneBall(Ball):
         super().__init__(*args, **kwargs)
         self.radius = int(c.DEFAULT_BALL_RADIUS * .8)
         self.mass = self.mass * .5
-        self.power_boost_factor = 1.5
+        self.power_boost_factor = 1.15
         self.max_power_reduction = 50
         self.intelligence_mult = .3
 
@@ -44,9 +44,10 @@ class TwoBall(Ball):
     def __init__(self, *args, **kwargs):
         self.do_things_before_init()
         super().__init__(*args, **kwargs)
-        self.power_boost_factor = .9
+        self.power_boost_factor = .8
+        self.mass = self.mass * .75
         self.intelligence_mult = .3
-        self.inaccuracy = 5
+        self.inaccuracy = 10
         self.max_power_reduction = 10
     def do_things_before_init(self):
         # put code here
@@ -92,6 +93,7 @@ class ThreeBall(Ball):
     def __init__(self, *args, **kwargs):
         self.do_things_before_init()
         super().__init__(*args, **kwargs)
+        self.mass = self.mass * .9
         self.power_boost_factor = 1
         self.intelligence_mult = 1
         self.inaccuracy = 0
@@ -108,7 +110,7 @@ class FiveBall(Ball):
         self.do_things_before_init()
         super().__init__(*args, **kwargs)
         self.radius = int(c.DEFAULT_BALL_RADIUS * 1.35)
-        self.mass = self.mass * 1.6
+        self.mass = self.mass * 1.4
         self.power_boost_factor = 1.8
         self.max_power_reduction = 70
         self.drag_constant *= 1
@@ -202,7 +204,7 @@ class SevenBall(Ball):
         self.do_things_before_init()
         super().__init__(*args, **kwargs)
         self.radius = int(c.DEFAULT_BALL_RADIUS * 1.25)
-        self.mass = self.mass * 1.1
+        self.mass = self.mass * 1
         self.power_boost_factor = 1.4
         self.max_power_reduction = 70
         self.can_have_shield = True

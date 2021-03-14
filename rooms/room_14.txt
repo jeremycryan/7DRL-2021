@@ -8,6 +8,6 @@ L..................R
 L..................R
 XX................XX
 XX................xX
-X....XXXXDDXXX.X...X
+X....XXXXDDXXXX....X
 XX.PXXXXXDDXXXXXP.XX
 XXXXXXXXXDDXXXXXXXXX

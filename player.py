@@ -26,7 +26,7 @@ class Player(Ball):
 
     def update(self, dt, events):
         for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     mouse_pose = Pose(pygame.mouse.get_pos(), 0) + self.game.current_scene.camera.pose
                     my_pose = self.pose.copy()  # TODO once camera movement exists, account for it
