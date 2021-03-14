@@ -13,6 +13,7 @@ from copy import copy
 class Player(Ball):
     def __init__(self, game, x=0, y=0):
         super().__init__(game, x, y)
+        self.mass *= 1.05
         self.color = (255, 255, 0)
         self.active_cue = BasicCue()
         self.is_player = True
@@ -33,11 +34,18 @@ class Player(Ball):
         super().update(dt, events)
 
         current_room = self.game.current_scene.current_room() #TODO make this check fake player in simulation
+
+        floor_num = self.game.current_floor
+
         if self.is_completely_in_room() and not current_room.enemies_have_spawned:
             self.velocity *= 0.03**dt
         if not self.game.in_simulation:
-            if self.is_completely_in_room() and not current_room.enemies_have_spawned and self.game.current_scene.all_balls_below_speed():
+            if self.is_completely_in_room() and not current_room.enemies_have_spawned and self.game.current_scene.all_balls_below_speed() and current_room.doors_are_open :
                 current_room.doors_close()
+                current_room.set_difficulty()
+                current_room.spawn_enemies()
+            elif current_room.enemies_have_spawned and not current_room.doors_are_open and self.game.current_scene.no_enemies() and current_room.waves_remaining >2:
+                print("SPAWN TIME")
                 current_room.spawn_enemies()
             elif current_room.enemies_have_spawned and not current_room.doors_are_open and self.game.current_scene.no_enemies():
                 current_room.doors_open()

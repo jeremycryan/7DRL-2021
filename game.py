@@ -27,6 +27,7 @@ class Game:
         self.load_sounds()
         self.current_scene = None
         self.current_scene = MainMenuScene(self)
+        self.current_floor = 1
         self.main()
 
     def load_sounds(self):

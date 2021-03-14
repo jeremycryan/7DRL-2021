@@ -1,6 +1,7 @@
 import random
 
 import pygame
+import math
 
 from primitives import GameObject, Pose
 import constants as c
@@ -158,6 +159,23 @@ class Room(GameObject):
         self.enemies_have_spawned = False
         self.doors_are_open = True
         self.generated = False
+        self.waves_remaining = 1
+        self.base_difficulty = 1
+
+
+    def set_difficulty(self, tutorial_room = False):
+        floor_num = self.game.current_floor
+        self.base_difficulty = (floor_num**1.25 + 1)* 2
+
+        self.waves_remaining = math.log(floor_num**1,5) + random.random()*1.8 + 1.6
+        if(floor_num == 1):
+            self.waves_remaining -= 1
+
+        self.waves_remaining = max(self.waves_remaining, 4)
+        self.waves_remaining = max(self.waves_remaining, 1)
+        self.waves_remaining = round(self.waves_remaining)
+
+        pass
 
     def player_spawn(self):
         return self.center()
@@ -258,7 +276,7 @@ class Room(GameObject):
         room_x = self.x * c.ROOM_WIDTH_TILES
         room_y = self.y * c.ROOM_HEIGHT_TILES
         spawn_locations = []
-        max_iterations = 400
+        max_iterations = 2000
 
         while(len(spawn_locations)< spawn_count):
             found = False
@@ -277,18 +295,18 @@ class Room(GameObject):
 
 
                         for ball in self.game.current_scene.balls:
-                            if(ball.pose - Pose( (((x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2)), 0)).magnitude()<60:
+                            if(ball.pose - Pose( (((x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2)), 0)).magnitude()<81:
                                 found = False
                                 break
                         for spawn_location in spawn_locations:
-                            if(Pose((spawn_location[0], spawn_location[1]),0) - Pose( (((x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2)), 0)).magnitude()<60:
+                            if(Pose((spawn_location[0], spawn_location[1]),0) - Pose( (((x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2)), 0)).magnitude()<81:
                                 found = False
                                 break
                         tile_key = test_tile.key
                         if(tile_key == c.POCKET or tile_key == c.UP_WALL or tile_key == c.DOWN_WALL or tile_key == c.LEFT_WALL or tile_key == c.RIGHT_WALL or tile_key == c.WALL):
                             found = False
                             break
-            if(iterations>=max_iterations):
+            if(iterations==1):
                 return False
             spawn_locations.append(( ( (x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2  )  ))
 
@@ -349,8 +367,8 @@ class Room(GameObject):
             pocket.close()
 
     def spawn_enemies(self):
-        if self.enemies_have_spawned:
-            return
+        # if self.enemies_have_spawned:
+        #     return
         self.enemies_have_spawned = True
         self.game.current_scene.spawn_balls()
 

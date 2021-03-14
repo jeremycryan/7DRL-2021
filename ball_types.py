@@ -46,7 +46,7 @@ class TwoBall(Ball):
         super().__init__(*args, **kwargs)
         self.power_boost_factor = .9
         self.intelligence_mult = .3
-        self.inaccuracy = 3.5
+        self.inaccuracy = 5
         self.max_power_reduction = 10
     def do_things_before_init(self):
         # put code here
@@ -61,7 +61,7 @@ class FourBall(Ball):
         super().__init__(*args, **kwargs)
         self.power_boost_factor = 1.2
         self.max_power_reduction = 70
-        self.gravity = 3000000
+        self.gravity = 10000000
         self.inaccuracy = 20
         self.since_blip = 0
 
