@@ -19,6 +19,7 @@ class Pocket(GameObject):
         self.surf = pygame.transform.scale(self.surf, (100, 100))
         self.eaten = []
         self.hungry = False
+        self.next_floor = False
 
     def update(self, dt, events):
         ds = self.target_scale - self.scale
@@ -73,6 +74,7 @@ class NextFloorPocket(Pocket):
         self.room = room
         self.pose = Pose(self.room.center(), 0)
         self.scale = 0
+        self.next_floor = True
 
     def can_swallow(self, ball):
         # Only player can go to next floor
@@ -82,11 +84,20 @@ class NextFloorPocket(Pocket):
         if diff.magnitude() < self.radius*self.scale:
             return True
 
+    def open(self):
+        print("OPEN UP")
+        super().open()
+
     def update(self, dt, events):
-        if self.game.current_scene.boss_is_dead:
+        if self.hungry:
             if self.scale < 1:
                 self.scale += dt
                 self.scale = min(1, self.scale)
+
+    def swallow(self, ball):
+        super().swallow(ball)
+        if ball is self.game.current_scene.player and not self.game.in_simulation:
+            self.game.current_scene.player_advancing = True
 
     def draw(self, surf, offset=(0, 0)):
         if not self.hungry:

@@ -27,7 +27,7 @@ class Map(GameObject):
         origin.become_spawn_room()
         for room in self.room_iter():
             room.openings = []
-        self.make_branch(origin, min_length=1, max_length=3, master=True)
+        self.make_branch(origin, min_length=1, max_length=0 + self.game.current_floor, master=True)
         for room in self.room_iter():
             room.doors_open()
 
@@ -365,17 +365,21 @@ class Room(GameObject):
             tile.generate_surface()
         self.doors_are_open = False
         for pocket in self.pockets:
-            pocket.open()
+            if not pocket.next_floor:
+                pocket.open()
 
     def doors_open(self):
+        for pocket in self.pockets:
+            if not pocket.next_floor:
+                pocket.close()
+            elif self.game.current_scene and self.game.current_scene.no_enemies() and self.game.current_scene.boss_is_dead:
+                pocket.open()
         for tile in self.tile_iter():
             tile.doors_open()
         self.add_tile_collisions()
         for tile in self.tile_iter():
             tile.generate_surface()
         self.doors_are_open = True
-        for pocket in self.pockets:
-            pocket.close()
 
     def spawn_enemies(self):
         # if self.enemies_have_spawned:
@@ -510,17 +514,17 @@ class Tile(GameObject):
 
         surface = None
         neighbors = self.neighbors()
-        if neighbors[c.UP] and neighbors[c.UP].left_bumper:
-            if neighbors[c.LEFT] and neighbors[c.LEFT].up_bumper:
+        if neighbors[c.UP] and (neighbors[c.UP].left_bumper or neighbors[c.UP].top_left_corner):
+            if neighbors[c.LEFT] and (neighbors[c.LEFT].up_bumper or neighbors[c.LEFT].top_left_corner):
                 surface = pygame.image.load(c.image_path("br_inner.png"))
-        if neighbors[c.UP] and neighbors[c.UP].right_bumper:
-            if neighbors[c.RIGHT] and neighbors[c.RIGHT].up_bumper:
+        if neighbors[c.UP] and (neighbors[c.UP].right_bumper or neighbors[c.UP].top_right_corner):
+            if neighbors[c.RIGHT] and (neighbors[c.RIGHT].up_bumper or neighbors[c.RIGHT].top_right_corner):
                 surface = pygame.image.load(c.image_path("bl_inner.png"))
-        if neighbors[c.DOWN] and neighbors[c.DOWN].left_bumper:
-            if neighbors[c.LEFT] and neighbors[c.LEFT].down_bumper:
+        if neighbors[c.DOWN] and (neighbors[c.DOWN].left_bumper or neighbors[c.DOWN].bottom_left_corner):
+            if neighbors[c.LEFT] and (neighbors[c.LEFT].down_bumper or neighbors[c.LEFT].bottom_left_corner):
                 surface = pygame.image.load(c.image_path("tr_inner.png"))
-        if neighbors[c.DOWN] and neighbors[c.DOWN].right_bumper:
-            if neighbors[c.RIGHT] and neighbors[c.RIGHT].down_bumper:
+        if neighbors[c.DOWN] and (neighbors[c.DOWN].right_bumper or neighbors[c.DOWN].bottom_right_corner):
+            if neighbors[c.RIGHT] and (neighbors[c.RIGHT].down_bumper or neighbors[c.RIGHT].bottom_right_corner):
                 surface = pygame.image.load(c.image_path("tl_inner.png"))
         if surface:
             self.surface.blit(surface, (0, 0))

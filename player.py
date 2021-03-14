@@ -184,6 +184,10 @@ class Player(Ball):
     def draw(self, screen, offset=(0, 0)):
         super().draw(screen, offset=offset)
 
+    def sink_for_real(self):
+        super().sink_for_real()
+        self.game.current_scene.player_just_sunk()
+
     def mock_collision(self, other): #ONLY FOR MOCK BALL COLLISIONS
         if self.has_collided or other.is_player:
             return
