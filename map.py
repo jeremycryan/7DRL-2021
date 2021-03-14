@@ -27,16 +27,30 @@ class Map(GameObject):
         origin.become_spawn_room()
         for room in self.room_iter():
             room.openings = []
-        self.make_branch(origin, min_length=1, max_length=0 + self.game.current_floor, master=True)
+
+        floor_num = self.game.current_floor + 2
+        if(floor_num == 1):
+            raw_length = 2
+            pass
+        else:
+            raw_length = floor_num
+            raw_length = max(raw_length, 3)
+            raw_length = min(raw_length, 5)
+            raw_length_min = round((raw_length*(1 - random.random()*.2)) - 1)
+            raw_length_max=  round(raw_length*(1 + random.random()*.2))
+
+
+
+        self.make_branch(origin, min_length=raw_length_min, max_length=raw_length_max + self.game.current_floor, master=True)
         for room in self.room_iter():
             room.doors_open()
 
-    def make_branch(self, start, min_length=1, max_length=8, branch_prob=0.3, master=False):
+    def make_branch(self, start, min_length=1, max_length=8, branch_prob=0.25, master=False):
         if max_length <= 0:
             if master:
                 start.become_boss_room()
             return
-        if not master and (random.random() < 1/(max_length - min_length)):
+        if not master and min_length<=0 and random.random() < (-min_length/(max_length-min_length)):
             return
         open_neighbors = []
         for neighbor in self.neighbors(start):
@@ -68,7 +82,13 @@ class Map(GameObject):
 
         self.make_branch(next, min_length-1, max_length-1, master=True)
         if random.random() < branch_prob:
-            self.make_branch(next, min_length - 1, max_length - 2)
+            if (self.game.current_floor == 1):
+                self.make_branch(next, 0, 1)
+                pass
+            elif(self.game.current_floor > 4):
+                self.make_branch(next, 1, 2)
+            else:
+                self.make_branch(next, 1, 2)
 
     def neighbors(self, room):
         x, y = room.x, room.y
@@ -172,11 +192,12 @@ class Room(GameObject):
         floor_num = self.game.current_floor
         self.base_difficulty = (floor_num**1.25 + 1)* 2
 
-        self.waves_remaining = math.log(floor_num**1,5) + random.random()*1.8 + 1.6
+        self.waves_remaining = math.log(floor_num**1.5) + random.random()*1 + 1.3
         if(floor_num == 1):
             self.waves_remaining -= 1
 
-        self.waves_remaining = max(self.waves_remaining, 4)
+        self.waves_remaining = max(self.waves_remaining, 3)
+        self.waves_remaining *= (1-(random.random()*.4))
         self.waves_remaining = max(self.waves_remaining, 1)
         self.waves_remaining = round(self.waves_remaining)
 
