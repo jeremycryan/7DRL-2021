@@ -1,5 +1,5 @@
 from ball import Ball, Shelled
-from particle import BossGravityParticle, GravityParticle, ShieldParticle, HeartBubble, PoofBit
+from particle import BossGravityParticle, GravityParticle, ShieldParticle, HeartBubble, BombBubble, PoofBit
 
 from primitives import Pose
 
@@ -319,7 +319,6 @@ class BossBall(Ball):
         self.moves_per_turn = 3
         self.did_grav_attack = False
         self.current_health = 2
-        self.current_bombs = 0
         self.is_boss = True
         self.can_be_sunk = False
 
@@ -352,9 +351,16 @@ class BossBall(Ball):
                 bomb_count += 1
 
         to_room_center = self.pose - Pose((self.game.current_scene.current_room().center()[0], self.game.current_scene.current_room().center()[1]),0)
-        if self.game.current_scene.moves_used==self.moves_per_turn-1 and self.current_bombs<= 0:
-            self.current_bombs = 2 #ACTUALLY COUNT LATER AND DON"T DO IT HERE
+        if self.game.current_scene.moves_used<self.moves_per_turn-1 and bomb_count<= 0:
+
             print("BOMB SPAWN")
+
+            spawn_locations = self.game.current_scene.current_room().find_spawn_locations(2)
+
+            if (spawn_locations != False):
+                for i in range(0, len(spawn_locations)):
+                    self.game.current_scene.particles += [PreBall(self.game, BombBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+
             #self.attack_cooldown = True
             self.turn_phase = c.AFTER_HIT
             self.turn_in_progress = True
@@ -643,10 +649,11 @@ class BombBall(Ball):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.radius = self.radius * .9
+        self.radius = self.radius * 1
         self.mass = self.mass * .7
+        self.can_be_sunk = False
 
-        self.heart = pygame.transform.scale(pygame.image.load(c.image_path("heart.png")), (self.radius, self.radius))
+        self.heart = pygame.transform.scale(pygame.image.load(c.image_path("bomb.png")), (self.radius, self.radius))
         self.behind = pygame.Surface((self.radius*2, self.radius*2))
         self.behind.fill(c.MAGENTA)
         self.behind.set_colorkey(c.MAGENTA)
@@ -655,10 +662,11 @@ class BombBall(Ball):
         self.back_particles = []
         self.since_bubble = 0
         self.is_bomb = True
+        self.can_have_shield = False
 
-
-
-
+    def take_turn(self):
+        self.turn_phase = c.AFTER_HIT
+        self.turn_in_progress = True
 
     def heart_scale(self):
         period = math.pi
@@ -677,6 +685,15 @@ class BombBall(Ball):
         pass
 
     def update_even_if_shelled(self, dt, events):
+        balls = self.game.current_scene.balls
+        boss_alive = False
+        for ball in balls:
+            if(ball.is_boss):
+                boss_alive = True
+
+        if(not boss_alive):
+            self.break_ball()
+
         if self.game.in_simulation:
             return
 
@@ -686,9 +703,14 @@ class BombBall(Ball):
             if particle.dead:
                 self.back_particles.remove(particle)
         self.since_bubble += dt
-        if self.since_bubble > 0.03:
-            self.since_bubble -= 0.03
-            self.back_particles.append(HeartBubble(self.game, self))
+        if(self.game.current_scene.player == self.game.current_scene.current_ball):
+            if self.since_bubble > 0.03:
+                self.since_bubble -= 0.03
+                self.back_particles.append(BombBubble(self.game, self))
+        else:
+            if self.since_bubble > 0.01:
+                self.since_bubble -= 0.01
+                self.back_particles.append(BombBubble(self.game, self))
 
     def draw(self, screen, offset=(0, 0)):
 

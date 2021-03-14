@@ -484,9 +484,9 @@ class Ball(PhysicsObject):
                 if(ball.is_fragile):
                     ball.break_ball()
 
-                if (ball.is_bomb and self.is_boss):
+                if (ball.is_bomb and self.is_boss and self.game.current_scene.current_ball == self.game.current_scene.player):
                     self.bomb_boss(ball)
-                elif (ball.is_boss and self.is_bomb):
+                elif (ball.is_boss and self.is_bomb and self.game.current_scene.current_ball == self.game.current_scene.player):
                     ball.bomb_boss(self)
                 #ball.collide_with_other_ball_2(self)
                 break
@@ -586,19 +586,12 @@ class Ball(PhysicsObject):
             balls.remove(self)
 
     def bomb_boss(self, bomb_ball):
+        self.game.current_scene.force_player_next = True
+
         bomb_ball.explode_bomb()
+        self.game.current_scene.shake(250, pose=Pose((random.random()-.5, random.random()-.5), 0))
         self.current_health -= 1
 
-        #JARM ANIMATION HERE
-        balls = self.game.current_scene.balls
-        #print("FRAGILE")
-        if self.game.current_scene.current_ball == self:# and self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]:
-            self.turn_phase = c.AFTER_HIT
-            print("INNER FRAGILE")
-            self.game.current_scene.current_ball.turn_in_progress = False
-            self.game.current_scene.current_ball = self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]
-        if(self in self.game.current_scene.balls):
-            balls.remove(self)
 
     def do_collision(self, mapTile, interpolate_checked = False):
 
