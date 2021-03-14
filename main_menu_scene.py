@@ -19,6 +19,11 @@ class MainMenuScene(Scene):
         self.shade_alpha = 0
         self.target_alpha = 0
 
+        self.game.player_lives = 3
+        self.game.player_max_lives = 3
+        self.game.music_started = None
+        self.game.current_floor = 1
+
     def next_scene(self):
         return LevelScene(self.game)
 

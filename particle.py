@@ -343,6 +343,7 @@ class ShieldParticle(Particle):
         if self.age > self.shloop_time and not self.has_transformed and not self.target.sunk:
             self.target.gain_shell()
             self.has_transformed = True
+            self.game.whoosh.play()
 
     def draw(self, surface, offset=(0, 0)):
         if self.delay > 0:

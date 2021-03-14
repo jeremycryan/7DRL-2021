@@ -95,6 +95,9 @@ BPM = 112
 
 PLAYER_POCKET_MARGIN = 10
 
+POOL = ""
+HELL = "_hell"
+
 def dprint(thing):
     if DEBUG:
         print(thing)
