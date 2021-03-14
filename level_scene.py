@@ -376,7 +376,7 @@ class LevelScene(Scene):
         summon_list = []
 
         if(self.current_room().waves_remaining == 2):
-            summon_list.append(8)
+            summon_list.append(1)
             pass
         if(self.current_room().waves_remaining == 1):
             summon_list.append(2)
