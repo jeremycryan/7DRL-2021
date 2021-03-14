@@ -21,7 +21,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.in_simulation = False
-        self.player_lives = 2
+        self.player_lives = 3
         self.player_max_lives = 3
         self.music_started = None
 
@@ -46,8 +46,8 @@ class Game:
         self.into_pocket_b = pygame.mixer.Sound(c.sound_path("ball into pocket (b).wav"))
         self.into_pocket_c = pygame.mixer.Sound(c.sound_path("ball into pocket (c).wav"))
 
-        self.exploring = pygame.mixer.Sound(c.sound_path("exploring.mp3"))
-        self.combat = pygame.mixer.Sound(c.sound_path("combat.mp3"))
+        self.exploring = pygame.mixer.Sound(c.sound_path("exploring.wav"))
+        self.combat = pygame.mixer.Sound(c.sound_path("combat.wav"))
 
     def into_pocket(self):
         to_play = random.choice([self.into_pocket_a, self.into_pocket_b, self.into_pocket_c])
