@@ -19,6 +19,7 @@ class Player(Ball):
         self.is_player = True
         self.has_collided = False
         self.collided_with = None
+        self.first_spawn = True
 
     def load_back_surface(self):
         self.back_surface = pygame.image.load(c.image_path("player_back.png"))
@@ -40,14 +41,24 @@ class Player(Ball):
         if self.is_completely_in_room() and not current_room.enemies_have_spawned:
             self.velocity *= 0.03**dt
         if not self.game.in_simulation:
-            if self.is_completely_in_room() and not current_room.enemies_have_spawned and self.game.current_scene.all_balls_below_speed() and current_room.doors_are_open :
-                current_room.doors_close()
-                current_room.set_difficulty()
-                current_room.spawn_enemies()
-            elif current_room.enemies_have_spawned and not current_room.doors_are_open and self.game.current_scene.no_enemies() and current_room.waves_remaining >2:
-                print("SPAWN TIME")
-                current_room.spawn_enemies()
+
+            if self.is_completely_in_room() and not current_room.enemies_have_spawned and self.game.current_scene.all_balls_below_speed() and current_room.doors_are_open:
+                if(floor_num == 1 and self.first_spawn):
+                    current_room.doors_close()
+                    current_room.spawn_enemies_first_room()
+                    current_room.waves_remaining = 4
+                else:
+                    current_room.doors_close()
+                    current_room.set_difficulty()
+                    current_room.spawn_enemies()
+            elif current_room.enemies_have_spawned and not current_room.doors_are_open and self.game.current_scene.no_enemies() and current_room.waves_remaining >0:
+                if (floor_num == 1 and self.first_spawn):
+                    current_room.spawn_enemies_first_room()
+                else:
+                    current_room.spawn_enemies()
             elif current_room.enemies_have_spawned and not current_room.doors_are_open and self.game.current_scene.no_enemies():
+                if(self.first_spawn):
+                    self.first_spawn = False
                 current_room.doors_open()
 
     def take_turn(self):

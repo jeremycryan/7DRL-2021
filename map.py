@@ -307,11 +307,11 @@ class Room(GameObject):
 
 
                         for ball in self.game.current_scene.balls:
-                            if(ball.pose - Pose( (((x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2)), 0)).magnitude()<81:
+                            if(ball.pose - Pose( (((x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2)), 0)).magnitude()<122:
                                 found = False
                                 break
                         for spawn_location in spawn_locations:
-                            if(Pose((spawn_location[0], spawn_location[1]),0) - Pose( (((x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2)), 0)).magnitude()<81:
+                            if(Pose((spawn_location[0], spawn_location[1]),0) - Pose( (((x_loc + room_x)*c.TILE_SIZE + c.TILE_SIZE/2) , ((y_loc + room_y)* c.TILE_SIZE + c.TILE_SIZE / 2)), 0)).magnitude()<122:
                                 found = False
                                 break
                         tile_key = test_tile.key
@@ -386,6 +386,11 @@ class Room(GameObject):
         #     return
         self.enemies_have_spawned = True
         self.game.current_scene.spawn_balls()
+    def spawn_enemies_first_room(self):
+        # if self.enemies_have_spawned:
+        #     return
+        self.enemies_have_spawned = True
+        self.game.current_scene.spawn_balls_first_room()
 
 
 class Tile(GameObject):
