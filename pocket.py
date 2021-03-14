@@ -64,11 +64,39 @@ class Pocket(GameObject):
 
 
 class NextFloorPocket(Pocket):
-    def __init__(game, tile):
-        super().__init__(game, tile)
+    def __init__(self, game, room):
+        super().__init__(game, room.get_at(0, 0))
+        self.radius = c.TILE_SIZE * 2**0.5 / 2
+        self.surf = pygame.image.load(c.image_path("hole.png"))
+        self.surf.set_colorkey(c.WHITE)
+        self.surf = pygame.transform.scale(self.surf, (200, 200))
+        self.room = room
+        self.pose = Pose(self.room.center(), 0)
+        self.scale = 0
 
     def can_swallow(self, ball):
         # Only player can go to next floor
         if not ball.is_player:
             return False
-        return super().can_swallow(ball)
+        diff = ball.pose - self.pose
+        if diff.magnitude() < self.radius*self.scale:
+            return True
+
+    def update(self, dt, events):
+        if self.game.current_scene.boss_is_dead:
+            if self.scale < 1:
+                self.scale += dt
+                self.scale = min(1, self.scale)
+
+    def draw(self, surf, offset=(0, 0)):
+        if not self.hungry:
+            return
+        if self.scale == 0:
+            return
+        x, y = self.room.center()
+        x = x - self.surf.get_width()//2 * self.scale + offset[0]
+        y = y - self.surf.get_height()//2 * self.scale + offset[1]
+        surf_to_blit = pygame.transform.scale(self.surf,
+            (int(self.surf.get_width()*self.scale),
+             int(self.surf.get_height()*self.scale)))
+        surf.blit(surf_to_blit, (x, y))

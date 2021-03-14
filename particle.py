@@ -135,7 +135,7 @@ class PoofBit(Particle):
         if self.color:
             return self.color
         else:
-            return (int(150 - 50*self.through()),)*3
+            return (int(200 - 50*self.through()),)*3
 
     def draw(self, surf, offset=(0, 0)):
         x = self.pose.x + offset[0]

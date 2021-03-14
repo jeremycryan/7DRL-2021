@@ -30,6 +30,7 @@ class LevelScene(Scene):
         self.music_started = time.time()
         self.game.combat.set_volume(0)
         self.moves_used = 0
+        self.boss_is_dead = False
 
     def shake(self, amt, pose=None):
         if not self.game.in_simulation:
@@ -89,6 +90,9 @@ class LevelScene(Scene):
         return True
 
     def update(self, dt, events):
+        if self.current_room().is_boss_room:
+            self.boss_is_dead = True
+
         for ball in self.balls:
             ball._did_collide = False;
         for ball in self.balls:
