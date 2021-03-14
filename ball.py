@@ -1133,6 +1133,7 @@ class Ball(PhysicsObject):
         if not self.has_poofed:
             if on_land:
                 self.make_poof((self.pose + Pose((0, self.radius/2), 0)).get_position(), 16)
+                self.game.hit_felt(Pose((180 * self.mass, 0), 0))
             else:
                 self.make_poof(self.pose.get_position(), 16)
                 self.has_poofed = True

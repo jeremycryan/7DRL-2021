@@ -38,13 +38,13 @@ class LevelScene(Scene):
         self.place_circle = pygame.Surface((c.DEFAULT_BALL_RADIUS*2, c.DEFAULT_BALL_RADIUS*2))
         self.place_circle.fill(c.BLACK)
         pygame.draw.circle(self.place_circle, c.WHITE, (c.DEFAULT_BALL_RADIUS, c.DEFAULT_BALL_RADIUS), c.DEFAULT_BALL_RADIUS)
-        self.place_circle.set_alpha(70)
+        self.place_circle.set_alpha(100)
         self.place_circle.set_colorkey(c.BLACK)
 
         self.bad_place_circle = pygame.Surface((c.DEFAULT_BALL_RADIUS*2, c.DEFAULT_BALL_RADIUS*2))
         self.bad_place_circle.fill(c.BLACK)
         pygame.draw.circle(self.bad_place_circle, c.RED, (c.DEFAULT_BALL_RADIUS, c.DEFAULT_BALL_RADIUS), c.DEFAULT_BALL_RADIUS)
-        self.bad_place_circle.set_alpha(70)
+        self.bad_place_circle.set_alpha(100)
         self.bad_place_circle.set_colorkey(c.BLACK)
 
         self.scratch_text = pygame.image.load(c.image_path("scratch_text.png"))
