@@ -46,12 +46,38 @@ class Game:
         self.into_pocket_b = pygame.mixer.Sound(c.sound_path("ball into pocket (b).wav"))
         self.into_pocket_c = pygame.mixer.Sound(c.sound_path("ball into pocket (c).wav"))
 
+        self.hit_felt_loud1 = pygame.mixer.Sound(c.sound_path("Ball hits felt LOUD 1.wav"))
+        self.hit_felt_loud2 = pygame.mixer.Sound(c.sound_path("Ball hits felt LOUD 2.wav"))
+        self.hit_felt_loud3 = pygame.mixer.Sound(c.sound_path("Ball hits felt LOUD 3.wav"))
+        self.hit_felt_soft1 = pygame.mixer.Sound(c.sound_path("Ball hits felt SOFT 1.wav"))
+        self.hit_felt_soft2 = pygame.mixer.Sound(c.sound_path("Ball hits felt SOFT 3.wav"))
+        self.hit_felt_soft3 = pygame.mixer.Sound(c.sound_path("Ball hits felt SOFT 5.wav"))
+
+        self.whoosh = pygame.mixer.Sound(c.sound_path("whoosh.wav"))
+        self.whoosh.set_volume(0.1)
+
+        for soft in [self.hit_felt_soft3, self.hit_felt_soft1, self.hit_felt_soft2]:
+            soft.set_volume(0.25)
+
         self.exploring = pygame.mixer.Sound(c.sound_path("exploring.wav"))
         self.combat = pygame.mixer.Sound(c.sound_path("combat.wav"))
 
+    def hit_felt(self, velocity):
+        mag = velocity.magnitude()
+        sample = None
+        if mag > 1000:
+            mag = 1000
+        if velocity.magnitude() > 250:
+            sample = random.choice([self.hit_felt_loud3, self.hit_felt_loud1, self.hit_felt_loud2])
+        elif velocity.magnitude() > 10:
+            sample = random.choice([self.hit_felt_soft1, self.hit_felt_soft2, self.hit_felt_soft3])
+        if sample:
+            sample.set_volume((mag/1000)**1.5 + 0.1)
+            sample.play()
+
     def into_pocket(self):
         to_play = random.choice([self.into_pocket_a, self.into_pocket_b, self.into_pocket_c])
-        to_play.set_volume(0.3)
+        to_play.set_volume(0.5)
         to_play.play()
 
     def balls_hit(self, intensity):

@@ -525,6 +525,8 @@ class Ball(PhysicsObject):
             if (self.velocity.magnitude() > c.MIN_BOUNCE_REDUCTION_SPEED or c.WALL_BOUNCE_FACTOR):
                 self.velocity.scale_to(self.velocity.magnitude() * c.WALL_BOUNCE_FACTOR)
             self.game.current_scene.shake(8 * self.velocity.magnitude()*self.mass / 500, pose=self.velocity)
+            if not self.game.in_simulation:
+                self.game.hit_felt(self.velocity)
 
         if(self.is_fragile and (self._did_collide_wall or self._did_collide) and not self.is_simulating):
             self.break_ball()
@@ -551,6 +553,7 @@ class Ball(PhysicsObject):
         if(self in self.game.current_scene.balls):
             balls.remove(self)
     def do_collision(self, mapTile, interpolate_checked = False):
+
 
         if (self.is_fragile and not self.is_simulating):
             self.break_ball()

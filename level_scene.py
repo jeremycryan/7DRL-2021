@@ -61,6 +61,10 @@ class LevelScene(Scene):
         self.moves_used = 0
         self.boss_is_dead = False
         self.player_advancing = False
+        self.has_lost = False
+        self.last_poses = []
+        self.now_poses = []
+        self.last_turn_started = time.time()
 
         self.life_icon = pygame.image.load(c.image_path("life_icon.png"))
         self.empty_life_icon = pygame.image.load(c.image_path("life_icon_empty.png"))
@@ -82,6 +86,7 @@ class LevelScene(Scene):
         if self.balls_are_spawning() or self.shields_are_spawning():
             return
         if not self.current_ball.turn_in_progress or self.current_ball.sunk:
+            self.last_turn_started = time.time()
             priority = list(self.priority_balls())
             if priority:
                 self.current_ball = priority.pop()
@@ -144,14 +149,28 @@ class LevelScene(Scene):
                 return False
         return True
 
+    def total_velocity(self):
+        return sum([ball.velocity.magnitude() for ball in self.balls])
+
     def all_balls_below_speed(self, speed=5):
+        if time.time() - self.last_turn_started > 8:
+            self.last_turn_started = time.time()
+            return True
         for ball in self.balls:
             if ball.velocity.magnitude() > speed:
-                return False
+                poses = [ball.pose.copy() for ball in self.balls]
+                if len(poses) != len(self.last_poses):
+                    return False
+                else:
+                    total_change = sum([(ball_pose - pose).magnitude() for ball_pose, pose in zip(poses, self.last_poses)])
+                    if total_change < 0.000001 and not self.game.in_simulation and not any([ball.is_simulating for ball in self.balls]) and time.time() - self.last_turn_started > 0.1:
+                        return False
+                    else:
+                        return False
         return True
 
     def check_click(self, events):
-        if not self.player.sunk:
+        if not self.player.sunk or self.has_lost:
             return
 
         for event in events:
@@ -174,16 +193,22 @@ class LevelScene(Scene):
                     self.particles.append(PreBall(self.game, self.player))
 
     def update(self, dt, events):
+
         if self.current_room().is_boss_room:
             self.boss_is_dead = True
 
         self.check_click(events)
+        self.has_lost = self.game.player_lives < 0
+        if self.has_lost:
+            self.black_target_alpha = 255
 
         for ball in self.balls:
             ball._did_collide = False;
         for ball in self.balls:
             ball.update(dt, events)
         self.update_current_ball()
+        self.last_poses = self.now_poses
+        self.now_poses = [ball.pose.copy() for ball in self.balls]
         for ball in self.balls[:]:
             if ball.has_sunk():
                 self.balls.remove(ball)
@@ -213,7 +238,7 @@ class LevelScene(Scene):
         else:
             self.black_alpha = min(self.black_target_alpha, self.black_alpha + 800*dt)
 
-        if self.black_alpha == 255 and self.player_advancing:
+        if self.black_alpha == 255 and (self.player_advancing or self.has_lost):
             self.is_over = True
 
     def draw(self, surface, offset=(0, 0)):
@@ -239,7 +264,7 @@ class LevelScene(Scene):
             surface.blit(self.black, (0, 0))
 
     def draw_drop_preview(self, surface, offset=(0, 0)):
-        if not self.player.sunk or self.player_advancing:
+        if not self.player.sunk or self.player_advancing or self.has_lost:
             return
 
         surface.blit(self.scratch_text_back, (c.WINDOW_WIDTH//2 - self.scratch_text_back.get_width()//2, c.WINDOW_HEIGHT//2 - self.scratch_text_back.get_height()//2), special_flags=pygame.BLEND_MULT)
@@ -430,6 +455,13 @@ class LevelScene(Scene):
 
 
     def next_scene(self):
-        self.game.current_floor += 1
-        self.game.music_started = self.music_started
-        return LevelScene(self.game)
+        if self.player_advancing:
+            self.game.current_floor += 1
+            self.game.music_started = self.music_started
+            return LevelScene(self.game)
+        else:
+            # player has lost
+            from main_menu_scene import MainMenuScene
+            self.game.exploring.fadeout(400)
+            self.game.combat.fadeout(400)
+            return MainMenuScene(self.game)

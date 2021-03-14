@@ -499,19 +499,19 @@ class Tile(GameObject):
     def generate_surface(self):
         self.surface = pygame.Surface((c.TILE_SIZE, c.TILE_SIZE))
         if self.key in [c.EMPTY, c.POCKET, c.LEFT_WALL, c.RIGHT_WALL, c.DOWN_WALL, c.UP_WALL] and self.collidable == False:
-            self.surface = pygame.image.load(c.image_path("felt.png"))
+            self.surface = pygame.image.load(c.image_path(f"felt{self.ext()}.png"))
         else:
             self.surface.fill(c.BLACK)
 
         surface = None
         if self.right_bumper:
-            surface = pygame.image.load(c.image_path("left_wall.png"))
+            surface = pygame.image.load(c.image_path(f"left_wall{self.ext()}.png"))
         elif self.left_bumper:
-            surface = pygame.image.load(c.image_path("right_wall.png"))
+            surface = pygame.image.load(c.image_path(f"right_wall{self.ext()}.png"))
         elif self.down_bumper:
-            surface = pygame.image.load(c.image_path("up_wall.png"))
+            surface = pygame.image.load(c.image_path(f"up_wall{self.ext()}.png"))
         elif self.up_bumper:
-            surface = pygame.image.load(c.image_path("down_wall.png"))
+            surface = pygame.image.load(c.image_path(f"down_wall{self.ext()}.png"))
 
         if surface:
             self.surface.blit(surface, (0, 0))
@@ -520,16 +520,16 @@ class Tile(GameObject):
         green = (30, 80, 30)
         radius = c.TILE_SIZE
         if self.bottom_right_corner:
-            surface = pygame.image.load(c.image_path("br_corner.png"))
+            surface = pygame.image.load(c.image_path(f"br_corner{self.ext()}.png"))
         elif self.bottom_left_corner:
-            surface = pygame.image.load(c.image_path("bl_corner.png"))
+            surface = pygame.image.load(c.image_path(f"bl_corner{self.ext()}.png"))
         elif self.top_left_corner:
-            surface = pygame.image.load(c.image_path("tl_corner.png"))
+            surface = pygame.image.load(c.image_path(f"tl_corner{self.ext()}.png"))
         elif self.top_right_corner:
-            surface = pygame.image.load(c.image_path("tr_corner.png"))
+            surface = pygame.image.load(c.image_path(f"tr_corner{self.ext()}.png"))
 
         if surface:
-            self.surface = pygame.image.load(c.image_path("felt.png")).convert()
+            self.surface = pygame.image.load(c.image_path(f"felt{self.ext()}.png")).convert()
             surface.set_colorkey(c.WHITE)
             self.surface.blit(surface, (0, 0))
 
@@ -537,20 +537,26 @@ class Tile(GameObject):
         neighbors = self.neighbors()
         if neighbors[c.UP] and (neighbors[c.UP].left_bumper or neighbors[c.UP].top_left_corner):
             if neighbors[c.LEFT] and (neighbors[c.LEFT].up_bumper or neighbors[c.LEFT].top_left_corner):
-                surface = pygame.image.load(c.image_path("br_inner.png"))
+                surface = pygame.image.load(c.image_path(f"br_inner{self.ext()}.png"))
         if neighbors[c.UP] and (neighbors[c.UP].right_bumper or neighbors[c.UP].top_right_corner):
             if neighbors[c.RIGHT] and (neighbors[c.RIGHT].up_bumper or neighbors[c.RIGHT].top_right_corner):
-                surface = pygame.image.load(c.image_path("bl_inner.png"))
+                surface = pygame.image.load(c.image_path(f"bl_inner{self.ext()}.png"))
         if neighbors[c.DOWN] and (neighbors[c.DOWN].left_bumper or neighbors[c.DOWN].bottom_left_corner):
             if neighbors[c.LEFT] and (neighbors[c.LEFT].down_bumper or neighbors[c.LEFT].bottom_left_corner):
-                surface = pygame.image.load(c.image_path("tr_inner.png"))
+                surface = pygame.image.load(c.image_path(f"tr_inner{self.ext()}.png"))
         if neighbors[c.DOWN] and (neighbors[c.DOWN].right_bumper or neighbors[c.DOWN].bottom_right_corner):
             if neighbors[c.RIGHT] and (neighbors[c.RIGHT].down_bumper or neighbors[c.RIGHT].bottom_right_corner):
-                surface = pygame.image.load(c.image_path("tl_inner.png"))
+                surface = pygame.image.load(c.image_path(f"tl_inner{self.ext()}.png"))
         if surface:
             self.surface.blit(surface, (0, 0))
 
         self.surface = self.surface.convert()
+
+    def ext(self):
+        if self.game.current_floor <= 1:
+            return c.POOL
+        else:
+            return c.HELL
 
     def draw(self, surface, offset=(0, 0)):
         x = self.x * c.TILE_SIZE + offset[0]

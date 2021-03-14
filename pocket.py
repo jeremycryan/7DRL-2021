@@ -14,14 +14,28 @@ class Pocket(GameObject):
         self.scale = 1.0
         self.target_scale = 1.0
         self.radius = c.TILE_SIZE * 2**0.5 / 2
-        self.surf = pygame.image.load(c.image_path("hole.png"))
+        self.surf = pygame.image.load(c.image_path(f"hole{self.ext()}.png"))
         self.surf.set_colorkey(c.WHITE)
         self.surf = pygame.transform.scale(self.surf, (100, 100))
         self.eaten = []
         self.hungry = False
         self.next_floor = False
 
+    def ext(self):
+        if self.game.current_floor <= 1:
+            return c.POOL
+        else:
+            return c.HELL
+
     def update(self, dt, events):
+        if self.hungry and self.scale < 1:
+            self.scale += dt * 2
+            if self.scale > 1:
+                self.scale = 1
+        elif not self.hungry and self.scale > 0:
+            self.scale -= dt * 2
+            if self.scale < 0:
+                self.scale = 0
         ds = self.target_scale - self.scale
         self.scale += ds * dt * 5
         if ds * (self.target_scale - self.scale) < 0:
@@ -70,7 +84,7 @@ class NextFloorPocket(Pocket):
     def __init__(self, game, room):
         super().__init__(game, room.get_at(0, 0))
         self.radius = 100
-        self.surf = pygame.image.load(c.image_path("hole.png"))
+        self.surf = pygame.image.load(c.image_path(f"hole{self.ext()}.png"))
         self.surf.set_colorkey(c.WHITE)
         self.surf = pygame.transform.scale(self.surf, (200, 200))
         self.room = room
