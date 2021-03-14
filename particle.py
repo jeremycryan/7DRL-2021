@@ -248,6 +248,17 @@ class GravityParticle(Particle):
         self.radius = 4
         self.ball = ball
 
+class BossGravityParticle(Particle):
+    def __init__(self, game, ball):
+        super().__init__(game)
+        self.pose_rel = Pose((0, 0), 0)
+        speed = c.BOSS_GRAVITY_RADIUS * 2 * (ball.scale * 2 - .999)
+        self.velocity = Pose((speed, 0), 0)
+        self.velocity.rotate_position(random.random() * 360)
+        self.duration = 0.5
+        self.radius = 4
+        self.ball = ball
+
     def get_scale(self):
         x = self.through()
         return -(2*x - 1)**2 + 1
@@ -256,7 +267,7 @@ class GravityParticle(Particle):
         return 255
 
     def get_color(self):
-        return (180, 30, 170)
+        return (50, 30, 30)
 
     def update(self, dt, events):
         super().update(dt, events)
@@ -272,8 +283,8 @@ class GravityParticle(Particle):
         pygame.draw.ellipse(orb, self.get_color(), (0, 0, r*3, r*2), r)
         orb = pygame.transform.rotate(orb, -math.atan2(self.velocity.y, self.velocity.x)*180/math.pi)
         surf.blit(orb,
-                  (self.ball.pose.x + self.pose_rel.x + offset[0] - orb.get_width()//2, self.ball.pose.y + self.pose_rel.y + offset[1] - orb.get_height()//2),
-                  special_flags=pygame.BLEND_ADD)
+                  (self.ball.pose.x + self.pose_rel.x + offset[0] - orb.get_width()//2, self.ball.pose.y + self.pose_rel.y + offset[1] - orb.get_height()//2)
+                  )
 
 class ShieldParticle(Particle):
     def __init__(self, game, parent, target, delay=0):
