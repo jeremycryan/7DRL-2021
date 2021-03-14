@@ -12,6 +12,9 @@ from particle import PreBall, ShieldParticle
 class LevelScene(Scene):
     def __init__(self, game):
         super().__init__(game)
+        self.loading_new_level = pygame.image.load(c.image_path("loading_new_level.png"))
+        self.game.screen.blit(self.loading_new_level, (c.WINDOW_WIDTH//2 - self.loading_new_level.get_width()//2, c.WINDOW_HEIGHT - self.loading_new_level.get_height()))
+        pygame.display.flip()
         self.map = Map(self.game)
         self.player = Player(game, *self.map.player_spawn())
         self.balls = [self.player]
@@ -38,6 +41,15 @@ class LevelScene(Scene):
         self.place_circle.set_alpha(70)
         self.place_circle.set_colorkey(c.BLACK)
 
+        self.bad_place_circle = pygame.Surface((c.DEFAULT_BALL_RADIUS*2, c.DEFAULT_BALL_RADIUS*2))
+        self.bad_place_circle.fill(c.BLACK)
+        pygame.draw.circle(self.bad_place_circle, c.RED, (c.DEFAULT_BALL_RADIUS, c.DEFAULT_BALL_RADIUS), c.DEFAULT_BALL_RADIUS)
+        self.bad_place_circle.set_alpha(70)
+        self.bad_place_circle.set_colorkey(c.BLACK)
+
+        self.scratch_text = pygame.image.load(c.image_path("scratch_text.png"))
+        self.scratch_text_back = pygame.image.load(c.image_path("scratch_text_back.png"))
+
         if not self.game.music_started:
             self.game.exploring.play(-1)
             self.game.combat.play(-1)
@@ -45,7 +57,7 @@ class LevelScene(Scene):
         else:
             self.music_started = self.game.music_started
         self.game.combat.set_volume(0)
-        self.game.exploring.set_volume(1.0)
+        self.game.exploring.set_volume(0.18)
         self.moves_used = 0
         self.boss_is_dead = False
         self.player_advancing = False
@@ -104,6 +116,25 @@ class LevelScene(Scene):
         for ball in self.balls:
             if ball.attack_on_room_spawn:
                 yield ball
+
+    def is_valid_drop_location(self, x, y):
+        if self.player_advancing:
+            return False
+        # Check if player drop location is a-ok
+        pose = Pose((x, y), 0)
+        x0, y0 = self.camera.add_offset((0, 0))
+        pixel_pose = Pose((x - x0 + c.DEFAULT_BALL_RADIUS, y - y0 + c.DEFAULT_BALL_RADIUS), 0)
+        for tile in self.map.tiles_near(pixel_pose, c.DEFAULT_BALL_RADIUS):
+            if tile.collidable:
+                return False
+        for ball in self.balls:
+            if ball.is_player:
+                continue
+            if (ball.pose - pixel_pose).magnitude() < c.DEFAULT_BALL_RADIUS + ball.radius:
+                return False
+        if self.map.get_at_pixels(*pixel_pose.get_position()) is not self.current_room():
+           return False
+        return True
 
     def no_enemies(self):
         if self.balls_are_spawning():
@@ -171,7 +202,7 @@ class LevelScene(Scene):
         self.camera.object_to_track = self.current_room()
         if self.no_enemies():
             self.game.combat.set_volume(0)
-            self.game.exploring.set_volume(1)
+            self.game.exploring.set_volume(0.18)
 
         if self.player.sunk:
             self.force_player_next = True
@@ -208,13 +239,19 @@ class LevelScene(Scene):
             surface.blit(self.black, (0, 0))
 
     def draw_drop_preview(self, surface, offset=(0, 0)):
-        if not self.player.sunk:
+        if not self.player.sunk or self.player_advancing:
             return
+
+        surface.blit(self.scratch_text_back, (c.WINDOW_WIDTH//2 - self.scratch_text_back.get_width()//2, c.WINDOW_HEIGHT//2 - self.scratch_text_back.get_height()//2), special_flags=pygame.BLEND_MULT)
+        surface.blit(self.scratch_text, (c.WINDOW_WIDTH//2 - self.scratch_text.get_width()//2, c.WINDOW_HEIGHT//2 - self.scratch_text.get_height()//2), special_flags=pygame.BLEND_ADD)
 
         mpos = pygame.mouse.get_pos()
         x = mpos[0] + offset[0] - self.place_circle.get_width()//2
         y = mpos[1] + offset[1] - self.place_circle.get_height()//2
-        surface.blit(self.place_circle, (x, y))
+        if self.is_valid_drop_location(x, y):
+            surface.blit(self.place_circle, (x, y))
+        else:
+            surface.blit(self.bad_place_circle, (x, y))
 
     def balls_are_spawning(self):
         for particle in self.particles:
@@ -326,8 +363,8 @@ class LevelScene(Scene):
             print("SPAWNING FAILED")
 
         self.force_player_next = True
-        self.game.combat.set_volume(100)
-        self.game.exploring.set_volume(0)
+        self.game.combat.set_volume(0.3)
+        self.game.exploring.set_volume(0.8)
 
     def spawn_balls_first_room(self):
 
@@ -377,8 +414,8 @@ class LevelScene(Scene):
             print("SPAWNING FAILED")
 
         self.force_player_next = True
-        self.game.combat.set_volume(100)
-        self.game.exploring.set_volume(0)
+        self.game.combat.set_volume(0.3)
+        self.game.exploring.set_volume(0.8)
 
 
     def current_room(self):

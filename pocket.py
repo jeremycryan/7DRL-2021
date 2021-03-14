@@ -41,6 +41,8 @@ class Pocket(GameObject):
         if not self.game.in_simulation:
             self.eaten.append(ball)
             ball.sink(self.pose.copy())
+        elif ball.is_player:
+            ball.sink(self.pose.copy())
 
     def gulp_animation(self):
         self.scale = 1.25
