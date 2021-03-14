@@ -533,6 +533,13 @@ class Ball(PhysicsObject):
         # TODO iterate through nearby map tiles and call self.collide_with_tile if colliding
         pass
     def break_ball(self):
+        if self.is_player:
+            self.sunk = True
+            self.alpha = 0
+            if (self in self.game.current_scene.balls):
+                self.game.current_scene.balls.remove(self)
+            return
+
         #JARM ANIMATION HERE
         balls = self.game.current_scene.balls
         #print("FRAGILE")
@@ -1080,10 +1087,12 @@ class Ball(PhysicsObject):
         self.can_collide = False
         self.target_alpha = 0
         self.target_scale = 0.5
-        if not self.is_player and not (self.game.in_simulation or self.is_simulating):
+        if not self.is_player and not (self.game.in_simulation or self.is_simulating) and self.game.current_scene.current_ball.is_player:
             self.game.current_scene.force_player_next = True
 
     def sink_for_real(self):
+        if self.is_player:
+            self.game.player_lives -= 1
         self.sunk = True
         self.turn_in_progress = False
 
