@@ -152,23 +152,37 @@ class LevelScene(Scene):
         difficulty = self.current_room().base_difficulty * (1 - ((self.current_room().waves_remaining)*.15))
         summon_list = []
 
+        summoned_four_ball = False
+        summoned_seven_ball = False
+
         while(difficulty>0):
             if(floor_num == 1):
                 try_summon = random.randint(1,4)
             elif (floor_num == 2):
                 try_summon = random.randint(1, 6)
-            else:
+            elif floor_num > 2 and floor_num<5:
                 try_summon = random.randint(1,7)
-
-            if(difficulty - c.DIFFICULTY_LOOKUP[try_summon - 1] >= -1):
-                difficulty -= c.DIFFICULTY_LOOKUP[try_summon - 1]
-                summon_list.append(try_summon)
             else:
-                print("FAIL DIFF = " + str(difficulty - c.DIFFICULTY_LOOKUP[try_summon] ) + " attempt on : " + str(try_summon))
+                try_summon = random.randint(3, 14)
+                try_summon = try_summon % 7
+
+            if random.random() < ((math.e**( ((floor_num +2)/3)  * -1)) * -1 + .3)* 1.5:
+                try_shield = 1
+            else:
+                try_shield = 0
+            if(difficulty - (c.DIFFICULTY_LOOKUP[try_summon - 1] + try_shield*3)>= -1 and not (try_summon == 4 and summoned_four_ball) and not (try_summon == 7 and summoned_seven_ball)):
+                difficulty -= c.DIFFICULTY_LOOKUP[try_summon - 1]
+                if(try_summon == 4):
+                    summoned_four_ball = True
+                elif(try_summon == 7):
+                    summoned_seven_ball = True
+                summon_list.append((try_summon, try_shield))
+            else:
+                print("FAIL DIFF = " + str(difficulty - c.DIFFICULTY_LOOKUP[try_summon - 1] ) + " attempt on : " + str(try_summon))
 
 
         print(len(summon_list))
-        summon_list.sort(key=lambda summon: c.DIFFICULTY_LOOKUP[summon] * -1)
+        summon_list.sort(key=lambda summon: (c.DIFFICULTY_LOOKUP[summon[0] - 1] * (random.random()+.5)* -1) )
         print(len(summon_list))
 
         offset = self.current_room().center()
@@ -178,20 +192,50 @@ class LevelScene(Scene):
 
         if(spawn_locations != False):
             for i in range(0,len(spawn_locations)):
-                if(summon_list[i] == 1):
-                    self.particles += [PreBall(self.game, OneBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
-                if (summon_list[i] == 2):
-                    self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
-                if (summon_list[i] == 3):
-                    self.particles += [PreBall(self.game, ThreeBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
-                if (summon_list[i] == 4):
-                    self.particles += [PreBall(self.game, FourBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
-                if (summon_list[i] == 5):
-                    self.particles += [PreBall(self.game, FiveBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
-                if (summon_list[i] == 6):
-                    self.particles += [PreBall(self.game, SixBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
-                if (summon_list[i] == 7):
-                    self.particles += [PreBall(self.game, SevenBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                if(summon_list[i][1] == 0):
+                    if(summon_list[i][0] == 1):
+                        self.particles += [PreBall(self.game, OneBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                    if (summon_list[i][0] == 2):
+                        self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                    if (summon_list[i][0] == 3):
+                        self.particles += [PreBall(self.game, ThreeBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                    if (summon_list[i][0] == 4):
+                        self.particles += [PreBall(self.game, FourBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                    if (summon_list[i][0] == 5):
+                        self.particles += [PreBall(self.game, FiveBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                    if (summon_list[i][0] == 6):
+                        self.particles += [PreBall(self.game, SixBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                    if (summon_list[i][0] == 7):
+                        self.particles += [PreBall(self.game, SevenBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
+                else:
+                    if (summon_list[i][0] == 1):
+                        pre_shell = OneBall(self.game, spawn_locations[i][0], spawn_locations[i][1])
+                        shelled = Shelled(self.game, pre_shell)
+                        self.particles += [PreBall(self.game, shelled)]
+                    if (summon_list[i][0] == 2):
+                        pre_shell = TwoBall(self.game, spawn_locations[i][0], spawn_locations[i][1])
+                        shelled = Shelled(self.game, pre_shell)
+                        self.particles += [PreBall(self.game, shelled)]
+                    if (summon_list[i][0] == 3):
+                        pre_shell = ThreeBall(self.game, spawn_locations[i][0], spawn_locations[i][1])
+                        shelled = Shelled(self.game, pre_shell)
+                        self.particles += [PreBall(self.game, shelled)]
+                    if (summon_list[i][0] == 4):
+                        pre_shell = FourBall(self.game, spawn_locations[i][0], spawn_locations[i][1])
+                        shelled = Shelled(self.game, pre_shell)
+                        self.particles += [PreBall(self.game, shelled)]
+                    if (summon_list[i][0] == 5):
+                        pre_shell = FiveBall(self.game, spawn_locations[i][0], spawn_locations[i][1])
+                        shelled = Shelled(self.game, pre_shell)
+                        self.particles += [PreBall(self.game, shelled)]
+                    if (summon_list[i][0] == 6):
+                        pre_shell = SixBall(self.game, spawn_locations[i][0], spawn_locations[i][1])
+                        shelled = Shelled(self.game, pre_shell)
+                        self.particles += [PreBall(self.game, shelled)]
+                    if (summon_list[i][0] == 7):
+                        pre_shell = SevenBall(self.game, spawn_locations[i][0], spawn_locations[i][1])
+                        shelled = Shelled(self.game, pre_shell)
+                        self.particles += [PreBall(self.game, shelled)]
 
 
         else:
