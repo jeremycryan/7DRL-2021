@@ -305,6 +305,7 @@ class Ball(PhysicsObject):
                     self.scale -= dt*1.4 - (self.target_scale - self.scale)*4*dt
                     if abs(self.scale - self.target_scale) < 0.05:
                         self.poof()
+                        self.game.into_pocket()
                 if self.alpha < 1:
                     self.sink_for_real()
                     return

@@ -42,8 +42,17 @@ class Game:
         self.ball_hit_3b = pygame.mixer.Sound(c.sound_path("balls hit 3(b).wav"))
         self.ball_hit_3c = pygame.mixer.Sound(c.sound_path("balls hit 3(c).wav"))
 
+        self.into_pocket_a = pygame.mixer.Sound(c.sound_path("ball into pocket (a).wav"))
+        self.into_pocket_b = pygame.mixer.Sound(c.sound_path("ball into pocket (b).wav"))
+        self.into_pocket_c = pygame.mixer.Sound(c.sound_path("ball into pocket (c).wav"))
+
         self.exploring = pygame.mixer.Sound(c.sound_path("exploring.mp3"))
         self.combat = pygame.mixer.Sound(c.sound_path("combat.mp3"))
+
+    def into_pocket(self):
+        to_play = random.choice([self.into_pocket_a, self.into_pocket_b, self.into_pocket_c])
+        to_play.set_volume(0.5)
+        to_play.play()
 
     def balls_hit(self, intensity):
         if intensity == 1:
