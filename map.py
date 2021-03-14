@@ -17,7 +17,7 @@ class Map(GameObject):
         self.generate_rooms()
 
     def generate_rooms(self):
-        self.rooms = [[Room(self.game, x, y) for x in range(self.width)] for y in range(self.height)]
+        self.rooms = [[Room(self.game, self, x, y) for x in range(self.width)] for y in range(self.height)]
         self.tree_generation()
 
     def tree_generation(self):
@@ -29,9 +29,14 @@ class Map(GameObject):
             room.openings = []
 
         floor_num = self.game.current_floor
-        if(floor_num == 1 or floor_num == 2):
-            raw_length = 2
+        branch_prob = 0.25
+        if(floor_num == 1):
+            raw_length = 1
+            branch_prob = 0
             pass
+        elif floor_num == 2:
+            raw_length = 1
+            branch_prob = 0.15
         else:
             raw_length = floor_num
             raw_length = max(raw_length, 3)
@@ -41,9 +46,9 @@ class Map(GameObject):
 
 
 
-        self.make_branch(origin, min_length=raw_length_min, max_length=raw_length_max + self.game.current_floor, master=True)
+        self.make_branch(origin, min_length=raw_length_min, max_length=raw_length_max + self.game.current_floor, branch_prob=branch_prob, master=True)
         for room in self.room_iter():
-            room.doors_open()
+            room.doors_open(sound=False)
 
     def make_branch(self, start, min_length=1, max_length=8, branch_prob=0.25, master=False):
         if max_length <= 0:
@@ -159,11 +164,19 @@ class Map(GameObject):
         mid_room = self.rooms[self.height//2][self.width//2]
         return mid_room.player_spawn()
 
+    def has_boss_room(self):
+        for room in self.room_iter():
+            if room.is_boss_room:
+                return True
+        return False
+
 
 class Room(GameObject):
-    def __init__(self, game, x, y):
+    def __init__(self, game, map, x, y):
+        self.map = map
         self.x = x
         self.y = y
+        self.player_died_here = False
         tile_x_off = self.x * c.ROOM_WIDTH_TILES
         tile_y_off = self.y * c.ROOM_HEIGHT_TILES
         self.tiles = [[Tile(game, random.choice([c.EMPTY, c.EMPTY, c.EMPTY, c.EMPTY, c.WALL]), tile_x_off + x, tile_y_off + y, parent=self)
@@ -186,6 +199,7 @@ class Room(GameObject):
         self.is_boss_room = False
         self.waves_remaining = 1
         self.base_difficulty = 1
+        self.has_boss_room = False
 
 
     def set_difficulty(self, tutorial_room = False):
@@ -267,6 +281,8 @@ class Room(GameObject):
         self.populate_from_path(c.room_path("spawn.txt"))
 
     def become_boss_room(self):
+        if self.map.has_boss_room():
+            return
         openings = self.openings
         self.populate_from_path(c.room_path("boss.txt"))
         self.openings = openings
@@ -380,7 +396,9 @@ class Room(GameObject):
             for tile in row:
                 yield tile
 
-    def doors_close(self):
+    def doors_close(self, sound=True):
+        if sound:
+            self.game.door.play()
         for tile in self.tile_iter():
             tile.doors_close()
         self.add_tile_collisions()
@@ -391,7 +409,12 @@ class Room(GameObject):
             if not pocket.next_floor:
                 pocket.open()
 
-    def doors_open(self):
+    def doors_open(self, sound=True):
+        if sound and not self.player_died_here:
+            self.game.player_lives += 1
+            self.game.current_scene.player.win_perfect()
+            if self.game.player_lives > self.game.player_max_lives:
+                self.game.player_lives = self.game.player_max_lives
         for pocket in self.pockets:
             if not pocket.next_floor:
                 pocket.close()
@@ -403,6 +426,9 @@ class Room(GameObject):
         for tile in self.tile_iter():
             tile.generate_surface()
         self.doors_are_open = True
+        if sound:
+            self.game.door.play()
+
 
     def spawn_enemies(self):
         # if self.enemies_have_spawned:
@@ -558,7 +584,7 @@ class Tile(GameObject):
         self.surface = self.surface.convert()
 
     def ext(self):
-        if self.game.current_floor <= 1:
+        if self.game.current_floor <= 2:
             return c.POOL
         else:
             return c.HELL

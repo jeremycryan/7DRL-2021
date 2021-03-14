@@ -55,6 +55,11 @@ class Game:
 
         self.whoosh = pygame.mixer.Sound(c.sound_path("whoosh.wav"))
         self.whoosh.set_volume(0.1)
+        self.explosion = pygame.mixer.Sound(c.sound_path("explosion 1.wav"))
+        self.shatter = pygame.mixer.Sound(c.sound_path("shield break.wav"))
+        self.shatter.set_volume(0.6)
+
+        self.door = pygame.mixer.Sound(c.sound_path("door.wav"))
 
         for soft in [self.hit_felt_soft3, self.hit_felt_soft1, self.hit_felt_soft2]:
             soft.set_volume(0.25)

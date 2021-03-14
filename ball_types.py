@@ -1,5 +1,5 @@
 from ball import Ball, Shelled
-from particle import BossGravityParticle, GravityParticle, ShieldParticle, HeartBubble, BombBubble, PoofBit
+from particle import BossGravityParticle, GravityParticle, ShieldParticle, HeartBubble, BombBubble, PoofBit, BubbleBurst, Spark
 
 from primitives import Pose
 
@@ -316,6 +316,7 @@ class BossBall(Ball):
         self.max_power_reduction = 30
         self.can_have_shield = False
         self.since_blip = 0
+        self.back_particles = []
 
         self.intelligence_mult = .5
 
@@ -361,6 +362,24 @@ class BossBall(Ball):
         self.generate_overlay()
         self.generate_shadow()
         self.generate_shading()
+
+        self.shell_surf = pygame.Surface((self.radius * 2, self.radius * 2))
+        self.shell_surf.fill(c.MAGENTA)
+        pygame.draw.circle(self.shell_surf, (128, 0, 0), (self.radius, self.radius), self.radius)
+        self.shell_surf.set_colorkey(c.MAGENTA)
+        self.shell_surf.set_alpha(60)
+        self.twinkle_surf = self.shell_surf.copy()
+        self.twinkle_surf.fill(c.BLACK)
+        pygame.draw.circle(self.twinkle_surf, c.WHITE, (self.radius * 1.4, self.radius * 0.55), self.radius * 0.25)
+        pygame.draw.circle(self.twinkle_surf, c.WHITE, (self.radius * 1.7, self.radius * 0.7), self.radius * 0.1)
+        self.sheen = pygame.Surface((self.radius * 2, self.radius * 2))
+        self.sheen.fill(c.MAGENTA)
+        pygame.draw.circle(self.sheen, c.WHITE, (self.radius, self.radius), self.radius)
+        self.sheen.set_colorkey(c.MAGENTA)
+        self.sheen.set_alpha(0)
+        self.sheen_alpha = 0
+        self.twinkle_surf.set_alpha(100)
+        self.twinkle_surf.set_colorkey(c.BLACK)
 
         #CREATE HEALTH BALLS
         health_ball_count = min(self.game.current_floor, 5)
@@ -616,8 +635,17 @@ class BossBall(Ball):
     def update(self, dt, events):
         super().update(dt, events)
 
+        for ball in self.health_balls:
+            if not self.split:
+                ball.update_even_if_shelled(dt, events)
+
         if(self.current_health<=0 and not self.split):
+            self.game.shatter.play()
             self.split = True
+            self.game.current_scene.particles.append(BubbleBurst(self.game, *self.pose.get_position(), self.radius))
+            for i in range(20):
+                spark = Spark(self.game, *self.pose.get_position(), intensity=3)
+                self.game.current_scene.particles.append(spark)
             self.pose = Pose((99999,99999),0)
             self.current_health = self.starting_health
             self.gravity = 0
@@ -642,13 +670,53 @@ class BossBall(Ball):
             while self.since_blip > 0.002:
                 self.since_blip -= 0.002
                 self.game.current_scene.particles.append(BossGravityParticle(self.game, self))
+        elif not self.game.in_simulation:
+            self.since_blip += dt
+            while self.since_blip > 0.03:
+                self.since_blip -= 0.03
+                self.back_particles.append(HeartBubble(self.game, self))
+                self.back_particles[-1].radius *= 2
+                self.back_particles[-1].get_color = lambda *args: (55, 0, 0)
+
+        for particle in self.back_particles:
+            particle.update(dt, events)
 
     def draw(self, screen, offset=(0, 0)):
         if(not self.split):
             if not self.sunk and self.gravity != 0:
                 r = int((c.BOSS_GRAVITY_RADIUS + math.sin(time.time()*12)*3) * (self.scale * 2 - .999))
                 pygame.draw.circle(screen, (50, 50, 50), (self.pose.x + offset[0], self.pose.y + offset[1]), r, 1)
-            super().draw(screen, offset)
+
+            for particle in self.back_particles:
+                particle.draw(screen, offset=offset)
+
+            num_balls = len(self.health_balls)
+            for i, ball in enumerate(self.health_balls):
+                off = Pose((self.radius/2, 0), 0)
+                angle = i/num_balls * 360 + time.time() * 15
+                off.rotate_position(angle)
+                ball.pose = self.pose + off
+                ball.draw(screen, offset=offset)
+
+            x = self.pose.x + offset[0] - self.shell_surf.get_width() // 2
+            y = self.pose.y + offset[1] - self.shell_surf.get_height() // 2
+            screen.blit(self.shell_surf, (x, y))
+            color = c.BLACK
+            if self.turn_in_progress:
+                color = c.WHITE
+            if not self.outline_hidden:
+                pygame.draw.circle(screen, color, (x + self.radius, y + self.radius), self.radius + 1, 2)
+
+            diff = self.pose - self.initial_position
+            tx = 1 * math.sin(diff.x / 7)
+            ty = 1 * math.cos(diff.y / 7)
+            screen.blit(self.twinkle_surf, (x + tx, y + ty))
+            self.sheen.set_alpha(self.sheen_alpha)
+            screen.blit(self.sheen, (x, y))
+
+    def draw_shadow(self, screen, offset=(0, 0)):
+        if not self.split:
+            super().draw_shadow(screen, offset)
 
     def generate_shadow(self):
         if not self.split:

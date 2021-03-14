@@ -74,6 +74,7 @@ class LevelScene(Scene):
             self.camera.shake(amt, pose)
 
     def player_just_sunk(self):
+        self.current_room().player_died_here = True
         if self.player_advancing:
             self.start_fadeout()
 
@@ -153,17 +154,21 @@ class LevelScene(Scene):
         return sum([ball.velocity.magnitude() for ball in self.balls])
 
     def all_balls_below_speed(self, speed=5):
-        if time.time() - self.last_turn_started > 8:
-            self.last_turn_started = time.time()
-            return True
+        # if time.time() - self.last_turn_started > 10:
+        #     self.last_turn_started = time.time()
+        #     self.current_ball.turn_in_progress = False
+        #     return True
         for ball in self.balls:
             if ball.velocity.magnitude() > speed:
                 poses = [ball.pose.copy() for ball in self.balls]
-                if len(poses) != len(self.last_poses):
+                if len(poses) != len(self.last_poses) or len(poses) == 1:
                     return False
                 else:
                     total_change = sum([(ball_pose - pose).magnitude() for ball_pose, pose in zip(poses, self.last_poses)])
                     if total_change < 0.000001 and not self.game.in_simulation and not any([ball.is_simulating for ball in self.balls]) and time.time() - self.last_turn_started > 10:
+                        self.last_turn_started = time.time()
+                        self.current_ball.turn_in_progress = False
+                        self.current_ball.turn_phase = c.AFTER_HIT
                         return True
                     else:
                         return False
@@ -194,7 +199,7 @@ class LevelScene(Scene):
 
     def update(self, dt, events):
 
-        if self.current_room().is_boss_room:
+        if self.current_room().is_boss_room and self.no_enemies() and self.current_room().enemies_have_spawned:
             self.boss_is_dead = True
 
         self.check_click(events)
@@ -438,7 +443,8 @@ class LevelScene(Scene):
 
     def spawn_boss(self):
 
-        print("SPAWNING BOSS")
+        if self.boss_is_dead:
+            return
         self.current_room().waves_remaining -= 1
         floor_num = self.game.current_floor
 
@@ -447,7 +453,7 @@ class LevelScene(Scene):
         spawn_locations = self.current_room().find_spawn_locations(1)
 
         if(spawn_locations != False):
-            self.particles += [BossBall(self.game, OneBall(self.game, spawn_locations[0][0], spawn_locations[0][1]))]
+            self.particles += [PreBall(self.game, BossBall(self.game, spawn_locations[0][0], spawn_locations[0][1]))]
         else:
             print("SPAWNING FAILED")
 
@@ -474,6 +480,9 @@ class LevelScene(Scene):
     def next_scene(self):
         if self.player_advancing:
             self.game.current_floor += 1
+            self.game.player_lives += 1
+            if self.game.player_lives > self.game.player_max_lives:
+                self.game.player_lives = self.game.player_max_lives
             self.game.music_started = self.music_started
             return LevelScene(self.game)
         else:

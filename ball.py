@@ -577,6 +577,10 @@ class Ball(PhysicsObject):
             balls.remove(self)
 
     def explode_bomb(self):
+        for i in range(15):
+            spark = Spark(self.game, *self.pose.get_position(), intensity=2)
+            self.game.current_scene.particles.append(spark)
+        self.game.explosion.play()
         self.make_explosion(self.pose.get_position())
         #JARM ANIMATION HERE
         balls = self.game.current_scene.balls
@@ -1154,7 +1158,7 @@ class Ball(PhysicsObject):
             self.game.current_scene.force_player_next = True
 
     def sink_for_real(self):
-        if self.is_player:
+        if self.is_player and not self.game.current_scene.player_advancing:
             self.game.player_lives -= 1
         self.sunk = True
         self.turn_in_progress = False
@@ -1431,6 +1435,7 @@ class Shelled(Ball):
                 self.inner_ball.velocity *= c.SHATTER_SPEED_MULT
                 self.large_spark_explosion(self.pose.get_position())
                 self.game.current_scene.shake(25)
+                self.game.shatter.play()
                 break
 
     def large_spark_explosion(self, position, intensity=1.5):

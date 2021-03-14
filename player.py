@@ -20,6 +20,11 @@ class Player(Ball):
         self.has_collided = False
         self.collided_with = None
         self.first_spawn = True
+        self.perfect = pygame.image.load(c.image_path("perfect_room.png"))
+        self.perfect_alpha = 0
+
+    def win_perfect(self):
+        self.perfect_alpha = 255
 
     def load_back_surface(self):
         self.back_surface = pygame.image.load(c.image_path("player_back.png"))
@@ -37,6 +42,11 @@ class Player(Ball):
         current_room = self.game.current_scene.current_room() #TODO make this check fake player in simulation
 
         floor_num = self.game.current_floor
+
+        self.perfect_alpha -= 50 * dt
+        if self.perfect_alpha < 128:
+            self.perfect_alpha -= 150*dt
+
 
         if self.is_completely_in_room() and not current_room.enemies_have_spawned:
             self.velocity *= 0.03**dt
@@ -197,6 +207,12 @@ class Player(Ball):
 
     def draw(self, screen, offset=(0, 0)):
         super().draw(screen, offset=offset)
+        if self.perfect_alpha > 0:
+            x = self.pose.x + offset[0] - self.perfect.get_width()//2
+            y = self.pose.y + offset[1] - self.perfect.get_height() - self.radius - 5
+            self.perfect.set_alpha(self.perfect_alpha)
+            self.perfect.set_colorkey(c.BLACK)
+            screen.blit(self.perfect, (x, y))
 
     def sink_for_real(self):
         super().sink_for_real()

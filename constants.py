@@ -54,7 +54,7 @@ DOWN_WALL = "D"
 LEFT_WALL = "L"
 RIGHT_WALL = "R"
 
-ROOMS = list(range(19))
+ROOMS = list(range(18))
 #ROOMS = [999]
 
 FULLSCREEN = False

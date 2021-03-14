@@ -2,6 +2,7 @@ from primitives import Pose, GameObject
 
 import constants as c
 import pygame
+import time
 
 
 class Pocket(GameObject):
@@ -22,7 +23,7 @@ class Pocket(GameObject):
         self.next_floor = False
 
     def ext(self):
-        if self.game.current_floor <= 1:
+        if self.game.current_floor <= 2:
             return c.POOL
         else:
             return c.HELL
@@ -84,13 +85,16 @@ class NextFloorPocket(Pocket):
     def __init__(self, game, room):
         super().__init__(game, room.get_at(0, 0))
         self.radius = 100
-        self.surf = pygame.image.load(c.image_path(f"hole{self.ext()}.png"))
+        self.surf = pygame.image.load(c.image_path(f"big_hole.png"))
+        self.spin = pygame.image.load(c.image_path(f"big_hole_swirl.png"))
+        self.spin.set_colorkey(c.MAGENTA)
         self.surf.set_colorkey(c.WHITE)
         self.surf = pygame.transform.scale(self.surf, (200, 200))
         self.room = room
         self.pose = Pose(self.room.center(), 0)
         self.scale = 0
         self.next_floor = True
+        self.age = 0
 
     def can_swallow(self, ball):
         # Only player can go to next floor
@@ -109,11 +113,12 @@ class NextFloorPocket(Pocket):
             if self.scale < 1:
                 self.scale += dt
                 self.scale = min(1, self.scale)
+        self.age += dt
 
     def swallow(self, ball):
-        super().swallow(ball)
         if ball is self.game.current_scene.player and not self.game.in_simulation:
             self.game.current_scene.player_advancing = True
+        super().swallow(ball)
 
     def draw(self, surf, offset=(0, 0)):
         if not self.hungry:
@@ -127,3 +132,10 @@ class NextFloorPocket(Pocket):
             (int(self.surf.get_width()*self.scale),
              int(self.surf.get_height()*self.scale)))
         surf.blit(surf_to_blit, (x, y))
+
+        x, y = self.room.center()
+        swirl = pygame.transform.scale(self.spin, (int(self.spin.get_width() * self.scale), int(self.spin.get_height()*self.scale)))
+        swirl = pygame.transform.rotate(swirl, self.age*-25)
+        x = x - swirl.get_width()//2 + offset[0]
+        y = y - swirl.get_height()//2 + offset[1]
+        surf.blit(swirl, (x, y))

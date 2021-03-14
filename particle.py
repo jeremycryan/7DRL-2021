@@ -50,6 +50,8 @@ class Spark(Particle):
         self.radius = 6
         self.color = c.WHITE
         self.duration = 0.3
+        if intensity > 1:
+            self.duration *= intensity
         self.intensity = intensity
 
     def update(self, dt, events):
@@ -284,6 +286,33 @@ class GravityParticle(Particle):
         self.radius = 4
         self.ball = ball
 
+    def get_scale(self):
+        x = self.through()
+        return -(2*x - 1)**2 + 1
+
+    def get_alpha(self):
+        return 255
+
+    def get_color(self):
+        return (180, 30, 170)
+
+    def update(self, dt, events):
+        super().update(dt, events)
+        self.pose_rel += self.velocity*dt
+
+    def draw(self, surf, offset=(0, 0)):
+        if self.velocity.magnitude() <= 5:
+            return
+        r = int(self.radius*self.get_scale())
+        orb = pygame.Surface((r*3, r*2))
+        orb.fill(c.BLACK)
+        orb.set_colorkey(c.BLACK)
+        pygame.draw.ellipse(orb, self.get_color(), (0, 0, r*3, r*2), r)
+        orb = pygame.transform.rotate(orb, -math.atan2(self.velocity.y, self.velocity.x)*180/math.pi)
+        surf.blit(orb,
+                  (self.ball.pose.x + self.pose_rel.x + offset[0] - orb.get_width()//2, self.ball.pose.y + self.pose_rel.y + offset[1] - orb.get_height()//2),
+                  special_flags=pygame.BLEND_ADD)
+
 class BossGravityParticle(Particle):
     def __init__(self, game, ball):
         super().__init__(game)
@@ -421,7 +450,8 @@ class HeartBubble(Particle):
         y = self.parent.pose.y + offset[1] + self.pose.y * self.parent.scale
         r = self.get_scale() * self.radius
 
-        pygame.draw.circle(surface, self.get_color(), (x, y), r)
+        if self.through() < 1:
+            pygame.draw.circle(surface, self.get_color(), (x, y), int(r))
 
 class BombBubble(Particle):
     def __init__(self, game, parent):
