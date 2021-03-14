@@ -23,6 +23,7 @@ class Game:
         self.in_simulation = False
         self.player_lives = 3
         self.player_max_lives = 3
+        self.music_started = None
 
         self.load_sounds()
         self.current_scene = None

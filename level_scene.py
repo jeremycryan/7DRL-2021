@@ -25,18 +25,39 @@ class LevelScene(Scene):
         self.floor_particles = []
         self.camera = Camera(game, self.current_room())
         self.force_player_next = False
-        self.game.exploring.play(-1)
-        self.game.combat.play(-1)
-        self.music_started = time.time()
+
+        self.black = pygame.Surface(c.WINDOW_SIZE)
+        self.black.fill(c.BLACK)
+        self.black_alpha = 255
+        self.black.set_alpha(self.black_alpha)
+        self.black_target_alpha = 0
+
+        if not self.game.music_started:
+            self.game.exploring.play(-1)
+            self.game.combat.play(-1)
+            self.music_started = time.time()
+        else:
+            self.music_started = self.game.music_started
         self.game.combat.set_volume(0)
+        self.game.exploring.set_volume(1.0)
         self.moves_used = 0
         self.boss_is_dead = False
+        self.player_advancing = False
 
     def shake(self, amt, pose=None):
         if not self.game.in_simulation:
             self.camera.shake(amt, pose)
 
+    def player_just_sunk(self):
+        if self.player_advancing:
+            self.start_fadeout()
+
+    def start_fadeout(self):
+        self.black_target_alpha = 255
+
     def update_current_ball(self):
+        if self.player_advancing:
+            return
         if self.balls_are_spawning() or self.shields_are_spawning():
             return
         if not self.current_ball.turn_in_progress or self.current_ball.sunk:
@@ -118,6 +139,14 @@ class LevelScene(Scene):
             self.game.combat.set_volume(0)
             self.game.exploring.set_volume(1)
 
+        if self.black_alpha > self.black_target_alpha:
+            self.black_alpha = max(self.black_target_alpha, self.black_alpha - 800*dt)
+        else:
+            self.black_alpha = min(self.black_target_alpha, self.black_alpha + 800*dt)
+
+        if self.black_alpha == 255 and self.player_advancing:
+            self.is_over = True
+
     def draw(self, surface, offset=(0, 0)):
         surface.fill(c.BLACK)
         offset = self.camera.add_offset(offset)
@@ -131,6 +160,10 @@ class LevelScene(Scene):
         self.player.draw_prediction_line(surface, offset=offset)
         for particle in self.particles:
             particle.draw(surface, offset=offset)
+
+        if self.black_alpha > 0:
+            self.black.set_alpha(self.black_alpha)
+            surface.blit(self.black, (0, 0))
 
     def balls_are_spawning(self):
         for particle in self.particles:
@@ -205,4 +238,6 @@ class LevelScene(Scene):
         return self.map.get_at_pixels(*self.player.pose.get_position())
 
     def next_scene(self):
+        self.game.current_floor += 1
+        self.game.music_started = self.music_started
         return LevelScene(self.game)

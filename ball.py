@@ -13,7 +13,7 @@ import time
 
 class Ball(PhysicsObject):
     def __init__(self, game, x=0, y=0, radius=c.DEFAULT_BALL_RADIUS, drag_multiplicative= c.DEFAULT_BALL_MULT_DRAG, drag_constant = c.DEFAULT_BALL_CONSTANT_DRAG, max_speed = c.DEFAULT_BALL_MAX_SPEED):
-        print("X: " + str(x) + "   Y: " + str(y))
+        #print("X: " + str(x) + "   Y: " + str(y))
         self.radius = radius
         self.mass = 1
         self.color = (255, 0, 0)  # This won't matter once we change drawing code
@@ -1144,7 +1144,7 @@ class Ball(PhysicsObject):
             old = new
             if traveled > c.AI_SIM_MAX_DIST:
                 final_position = player_copy.pose.copy()
-                print("SIM DISTANCE TIMEOUT    VELOCITY MAG: " + str(player_copy.velocity.magnitude()))
+                #print("SIM DISTANCE TIMEOUT    VELOCITY MAG: " + str(player_copy.velocity.magnitude()))
                 break
 
         if(final_position == None):
