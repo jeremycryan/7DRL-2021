@@ -56,8 +56,8 @@ class LevelScene(Scene):
             self.music_started = time.time()
         else:
             self.music_started = self.game.music_started
-        self.game.combat.set_volume(0)
-        self.game.exploring.set_volume(0.18)
+        self.game.combat_target_volume = 0
+        self.game.exploring_target_volume = 1.0
         self.moves_used = 0
         self.boss_is_dead = False
         self.player_advancing = False
@@ -99,7 +99,6 @@ class LevelScene(Scene):
                 self.moves_used += 1
                 if(self.current_ball.moves_per_turn <= self.moves_used):
                     self.moves_used = 0
-                    print("NEXT BALL")
                     balls_no_ghosts = []
                     for ball in self.balls:
                         if(ball.moves_per_turn != 0):
@@ -231,12 +230,15 @@ class LevelScene(Scene):
         self.camera.update(dt, events)
         self.camera.object_to_track = self.current_room()
         if self.no_enemies():
-            self.game.combat.set_volume(0)
-            self.game.exploring.set_volume(0.18)
+            self.game.combat_target_volume = 0
+            self.game.exploring_target_volume = 1.0
 
         if self.player.sunk:
             self.force_player_next = True
             self.player.scale = 1
+
+        if not self.player.sunk and self.player.turn_in_progress and self.player.turn_phase == c.BEFORE_HIT:
+            self.last_turn_started = time.time()
 
         if self.black_alpha > self.black_target_alpha:
             self.black_alpha = max(self.black_target_alpha, self.black_alpha - 800*dt)
@@ -259,6 +261,7 @@ class LevelScene(Scene):
         self.player.draw_prediction_line(surface, offset=offset)
         for particle in self.particles:
             particle.draw(surface, offset=offset)
+
 
         self.draw_lives(surface, offset=offset)
 
@@ -303,6 +306,8 @@ class LevelScene(Scene):
         difficulty = self.current_room().base_difficulty * (1 - ((self.current_room().waves_remaining)*.15))
         summon_list = []
 
+        offset = self.current_room().center()
+
         summoned_four_ball = False
         summoned_seven_ball = False
 
@@ -334,19 +339,14 @@ class LevelScene(Scene):
                 elif(try_summon == 7):
                     summoned_seven_ball = True
                 summon_list.append((try_summon, try_shield))
-            else:
-                print("FAIL DIFF = " + str(difficulty - c.DIFFICULTY_LOOKUP[try_summon - 1] ) + " attempt on : " + str(try_summon))
 
 
-        #print(len(summon_list))
         summon_list.sort(key=lambda summon: (c.DIFFICULTY_LOOKUP[summon[0] - 1] * (random.random()+1.3)* -1))
         summon_list = summon_list[:floor_num+1]
-        #print(len(summon_list))
 
         offset = self.current_room().center()
         #self.balls += [Ball(self.game, offset[0] - 200, offset[1] - 140)]
         spawn_locations = self.current_room().find_spawn_locations(len(summon_list))
-        print("SPAWNING" + str(summon_list))
 
         if(spawn_locations != False):
             for i in range(0,len(spawn_locations)):
@@ -396,19 +396,17 @@ class LevelScene(Scene):
                         self.particles += [PreBall(self.game, shelled)]
 
 
-        else:
-            print("SPAWNING FAILED")
 
         self.force_player_next = True
-        self.game.combat.set_volume(0.3)
-        self.game.exploring.set_volume(0.8)
+        self.game.combat_target_volume = 1.0
+        self.game.exploring_target_volume = 0
 
     def spawn_balls_first_room(self):
 
-        print("TUTORIAL ROOM")
         self.current_room().waves_remaining -= 1
 
         summon_list = []
+        offset = self.current_room().center()
 
         if(self.current_room().waves_remaining == 1):
             summon_list.append(2)
@@ -419,27 +417,19 @@ class LevelScene(Scene):
             pass
 
 
-        offset = self.current_room().center()
         #self.balls += [Ball(self.game, offset[0] - 200, offset[1] - 140)]
         spawn_locations = self.current_room().find_spawn_locations(len(summon_list))
 
         if(spawn_locations != False):
             for i in range(0,len(spawn_locations)):
-                print(i)
                 if(summon_list[i] == 1):
                     self.particles += [PreBall(self.game, OneBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
                 if (summon_list[i] == 2):
                     self.particles += [PreBall(self.game, TwoBall(self.game, spawn_locations[i][0], spawn_locations[i][1]))]
 
-
-
-
-        else:
-            print("SPAWNING FAILED")
-
         self.force_player_next = True
-        self.game.combat.set_volume(0.3)
-        self.game.exploring.set_volume(0.8)
+        self.game.combat_target_volume = 1.0
+        self.game.exploring_target_volume = 0
 
     def spawn_boss(self):
 
@@ -454,12 +444,10 @@ class LevelScene(Scene):
 
         if(spawn_locations != False):
             self.particles += [PreBall(self.game, BossBall(self.game, spawn_locations[0][0], spawn_locations[0][1]))]
-        else:
-            print("SPAWNING FAILED")
 
         self.force_player_next = False
-        self.game.combat.set_volume(0.3)
-        self.game.exploring.set_volume(0.8)
+        self.game.combat_target_volume = 1.0
+        self.game.exploring_target_volume = 0
 
 
 

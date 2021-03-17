@@ -25,6 +25,8 @@ class Game:
         self.player_max_lives = 3
         self.music_started = None
 
+        self.image_dict = {}
+
         self.load_sounds()
         self.current_scene = None
         self.current_scene = MainMenuScene(self)
@@ -64,8 +66,17 @@ class Game:
         for soft in [self.hit_felt_soft3, self.hit_felt_soft1, self.hit_felt_soft2]:
             soft.set_volume(0.25)
 
-        self.exploring = pygame.mixer.Sound(c.sound_path("exploring.wav"))
-        self.combat = pygame.mixer.Sound(c.sound_path("combat.wav"))
+        self.exploring = pygame.mixer.Sound(c.sound_path("exploring.mp3"))
+        self.combat = pygame.mixer.Sound(c.sound_path("combat.mp3"))
+        self.exploring_target_volume = 1
+        self.exploring_volume = 1
+        self.combat_target_volume = 0
+        self.combat_volume = 0
+
+    def load_image(self, path):
+        if path not in self.image_dict:
+            self.image_dict[path] = pygame.image.load(c.image_path(path))
+        return self.image_dict[path]
 
     def hit_felt(self, velocity):
         mag = velocity.magnitude()
@@ -100,6 +111,19 @@ class Game:
                 pygame.quit()
                 sys.exit(0)
         dt = self.clock.tick(c.FPS)/1000
+
+        crossfade_speed = 1
+        if self.exploring_target_volume < self.exploring_volume:
+            self.exploring_volume = max(self.exploring_target_volume, self.exploring_volume - crossfade_speed*dt)
+        elif self.exploring_target_volume > self.exploring_volume:
+            self.exploring_volume = min(self.exploring_target_volume, self.exploring_volume + crossfade_speed*dt)
+        if self.combat_target_volume < self.combat_volume:
+            self.combat_volume = max(self.combat_target_volume, self.combat_volume - crossfade_speed*dt)
+        elif self.combat_target_volume > self.combat_volume:
+            self.combat_volume = min(self.combat_target_volume, self.combat_volume + crossfade_speed*dt)
+        self.exploring.set_volume(self.exploring_volume*0.5)
+        self.combat.set_volume(self.combat_volume)
+
         return dt, events
 
     def main(self):

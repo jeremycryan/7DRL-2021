@@ -471,7 +471,6 @@ class BombBubble(Particle):
 
     def get_color(self):
         if(self.game.current_scene.player == self.game.current_scene.current_ball):
-            print("PLAYER")
             return (60, 40, 20)
         else:
             return (30, 10, 10)

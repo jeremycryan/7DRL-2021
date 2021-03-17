@@ -105,7 +105,6 @@ class NextFloorPocket(Pocket):
             return True
 
     def open(self):
-        print("OPEN UP")
         super().open()
 
     def update(self, dt, events):

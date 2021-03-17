@@ -416,7 +416,6 @@ class Ball(PhysicsObject):
                 velocity_reduction_point = 0
             velocity_reduced =  self.velocity.magnitude() - abs(velocity_reduction_point_time*c + (velocity_reduction_point_time**g) * b)
             if(abs(velocity_reduced) < self.velocity.magnitude()):
-                print("REDUCCED TO ;" + str(velocity_reduced))
                 self.velocity = velocity_vect * velocity_reduced
             else:
                 self.velocity.scale_to(0)
@@ -570,7 +569,6 @@ class Ball(PhysicsObject):
         #print("FRAGILE")
         if self.game.current_scene.current_ball == self:# and self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]:
             self.turn_phase = c.AFTER_HIT
-            print("INNER FRAGILE")
             self.game.current_scene.current_ball.turn_in_progress = False
             self.game.current_scene.current_ball = self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]
         if(self in self.game.current_scene.balls):
@@ -587,7 +585,6 @@ class Ball(PhysicsObject):
         #print("FRAGILE")
         if self.game.current_scene.current_ball == self:# and self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]:
             self.turn_phase = c.AFTER_HIT
-            print("INNER FRAGILE")
             self.game.current_scene.current_ball.turn_in_progress = False
             self.game.current_scene.current_ball = self.game.current_scene.balls[(self.game.current_scene.balls.index(self.game.current_scene.current_ball) + 1) % len(self.game.current_scene.balls)]
         if(self in self.game.current_scene.balls):

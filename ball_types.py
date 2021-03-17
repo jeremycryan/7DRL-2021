@@ -75,8 +75,7 @@ class FourBall(Ball):
     def load_back_surface(self):
         self.back_surface = pygame.image.load(c.image_path(f"4_ball.png"))
 
-    def update(self, dt, events):
-        super().update(dt, events)
+    def update_even_if_shelled(self, dt, events):
         if not self.game.in_simulation and not self.sunk:
             self.since_blip += dt
             while self.since_blip > 0.005:
@@ -160,13 +159,11 @@ class SixBall(Ball):
 
     def take_turn(self):
         if self.game.current_scene.moves_used<1 or (self.game.current_scene.moves_used<2 and (self.game.current_scene.player.pose - self.pose).magnitude() < 200):#(self.till_next_attack > 0):
-            print("NORMAL ATTACK")
             Ball.take_turn(self)
             self.turn_phase = c.AFTER_HIT
             self.till_next_attack -= 1
             self.turn_in_progress = True
         elif self.game.current_scene.moves_used<2:
-            print("Cast")
             #Ball.take_turn(self)
 
             #offset = self.current_room().center()
@@ -187,7 +184,6 @@ class SixBall(Ball):
             self.turn_in_progress = True
             self.turn_phase = c.AFTER_HIT
         else:
-            print("Turn 3")
             self.power_boost_factor *= .01
             Ball.take_turn(self)
             self.power_boost_factor *= 100
@@ -229,11 +225,9 @@ class SevenBall(Ball):
 
     def take_turn(self):
         if(self.till_next_attack>0 or all([isinstance(ball, Shelled) or ball.is_player for ball in self.game.current_scene.balls])):
-            print("NORMAL ATTACK")
             Ball.take_turn(self)
             self.till_next_attack -= 1
         else:
-            print("Shield")
             self.till_next_attack = 2
             balls = self.game.current_scene.balls
             delay = 0
@@ -292,7 +286,6 @@ class GhostBall(Ball):
         self.is_ghost = True
 
     def take_turn(self):
-        print("THIS CODE SHOULD NOT RUN SEE GHOST BALL ASAP!!!!!!!!")
         pass
 
     def do_things_before_init(self):
@@ -438,8 +431,6 @@ class BossBall(Ball):
         to_room_center = self.pose - Pose((self.game.current_scene.current_room().center()[0], self.game.current_scene.current_room().center()[1]),0)
         if self.game.current_scene.moves_used<self.moves_per_turn-1 and bomb_count<= 0:
 
-            print("BOMB SPAWN")
-
             spawn_locations = self.game.current_scene.current_room().find_spawn_locations(2)
 
             if (spawn_locations != False):
@@ -460,11 +451,9 @@ class BossBall(Ball):
 
         elif self.game.current_scene.moves_used<self.moves_per_turn-1:
             attack_val = random.random()
-            print("NORMAL BOSS ATTACK")
 
             if ((self.pose - self.game.current_scene.player.pose).magnitude()<180):#GRAV PULSE
                 self.did_grav_attack
-                print("GRAV ATTACK")
                 self.gravity = 80000000
                 self.end_per_attack()
                 pass
@@ -516,7 +505,6 @@ class BossBall(Ball):
                 self.end_per_attack()
 
             elif (attack_val < .25):
-                print("WEAK SMASHY ATTACK")
                 self.power_boost_factor *= 1.5
                 self.mass *= 1.5
                 Ball.take_turn(self)
@@ -524,14 +512,12 @@ class BossBall(Ball):
                 self.mass /= 1.5
             elif (attack_val < .45):
                 if(self.game.current_floor>4):
-                    print("SMASHY ATTACK")
                     self.power_boost_factor *= 2.5
                     self.mass *= 1.5
                     Ball.take_turn(self)
                     self.power_boost_factor /= 2.5
                     self.mass /= 1.5
                 else:
-                    print("SMASHY ATTACK")
                     self.power_boost_factor *= 2.5
                     self.mass *= 1.1
                     Ball.take_turn(self)
@@ -599,7 +585,6 @@ class BossBall(Ball):
                 pass
 
         elif self.game.current_scene.moves_used>self.moves_per_turn - 1:
-            print("FINAL BOSS TURN")
             self.end_per_attack()
 
         self.mass /= 3
