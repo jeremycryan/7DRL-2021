@@ -73,6 +73,15 @@ class Game:
         self.combat_target_volume = 0
         self.combat_volume = 0
 
+        self.black_hole_suck = pygame.mixer.Sound(c.sound_path("black hole.wav"))
+        self.black_hole_suck.set_volume(0.45)
+        self.black_hole_ambient = pygame.mixer.Sound(c.sound_path("black hole ambient.wav"))
+        self.black_hole_ambient.set_volume(0)
+        self.black_hole_volume = 0
+        self.since_black_hole = 999
+        self.play_black_hole = False
+        self.black_hole_target_volume = 0
+
     def load_image(self, path):
         if path not in self.image_dict:
             self.image_dict[path] = pygame.image.load(c.image_path(path))
@@ -113,16 +122,32 @@ class Game:
         dt = self.clock.tick(c.FPS)/1000
 
         crossfade_speed = 1
-        if self.exploring_target_volume < self.exploring_volume:
-            self.exploring_volume = max(self.exploring_target_volume, self.exploring_volume - crossfade_speed*dt)
-        elif self.exploring_target_volume > self.exploring_volume:
-            self.exploring_volume = min(self.exploring_target_volume, self.exploring_volume + crossfade_speed*dt)
-        if self.combat_target_volume < self.combat_volume:
-            self.combat_volume = max(self.combat_target_volume, self.combat_volume - crossfade_speed*dt)
-        elif self.combat_target_volume > self.combat_volume:
-            self.combat_volume = min(self.combat_target_volume, self.combat_volume + crossfade_speed*dt)
+        bh_factor = 1 - (self.play_black_hole*0.7)
+        if self.exploring_target_volume*bh_factor < self.exploring_volume:
+            self.exploring_volume = max(self.exploring_target_volume*bh_factor, self.exploring_volume - crossfade_speed*dt)
+        elif self.exploring_target_volume*bh_factor > self.exploring_volume:
+            self.exploring_volume = min(self.exploring_target_volume*bh_factor, self.exploring_volume + crossfade_speed*dt)
+        if self.combat_target_volume*bh_factor < self.combat_volume:
+            self.combat_volume = max(self.combat_target_volume*bh_factor, self.combat_volume - crossfade_speed*dt)
+        elif self.combat_target_volume*bh_factor > self.combat_volume:
+            self.combat_volume = min(self.combat_target_volume*bh_factor, self.combat_volume + crossfade_speed*dt)
         self.exploring.set_volume(self.exploring_volume*0.5)
         self.combat.set_volume(self.combat_volume)
+
+        self.since_black_hole += dt
+        if self.since_black_hole > 9 and self.play_black_hole:
+            self.since_black_hole = 0
+            self.black_hole_ambient.play()
+
+        if self.play_black_hole:
+            self.black_hole_target_volume = 1.0
+        else:
+            self.black_hole_target_volume = 0
+        if self.black_hole_target_volume < self.black_hole_volume:
+            self.black_hole_volume = max(self.black_hole_target_volume, self.black_hole_volume - crossfade_speed*dt)
+        elif self.black_hole_target_volume > self.black_hole_volume:
+            self.black_hole_volume = min(self.black_hole_target_volume, self.black_hole_volume + crossfade_speed*dt)
+        self.black_hole_ambient.set_volume(self.black_hole_volume)
 
         return dt, events
 

@@ -466,6 +466,7 @@ class LevelScene(Scene):
 
 
     def next_scene(self):
+        self.game.play_black_hole=False
         if self.player_advancing:
             self.game.current_floor += 1
             self.game.player_lives += 1

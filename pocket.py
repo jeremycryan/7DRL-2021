@@ -113,10 +113,15 @@ class NextFloorPocket(Pocket):
                 self.scale += dt
                 self.scale = min(1, self.scale)
         self.age += dt
+        if self.room == self.game.current_scene.current_room() and self.hungry:
+            self.game.play_black_hole = True
+        else:
+            self.game.play_black_hole = False
 
     def swallow(self, ball):
         if ball is self.game.current_scene.player and not self.game.in_simulation:
             self.game.current_scene.player_advancing = True
+            self.game.black_hole_suck.play()
         super().swallow(ball)
 
     def draw(self, surf, offset=(0, 0)):
